@@ -30,7 +30,7 @@ void Mesh::create() {
 
 
 
-            GLuint first_vertex_idx = pos.size();
+            //GLuint first_vertex_idx = pos.size();
 
             //make a counter of the number of indices that constitue the face
             int numFaceVerts = 0;
@@ -57,7 +57,7 @@ void Mesh::create() {
 
 
             // create triangle indices for face
-            for (GLuint i = 0; i < numFaceVerts - 2; i++) {
+            for (int i = 0; i < numFaceVerts - 2; i++) {
                 idx.push_back(totalNumberOfVerticesInMesh);
                 idx.push_back(totalNumberOfVerticesInMesh + i + 1);
                 idx.push_back(totalNumberOfVerticesInMesh + i + 2);

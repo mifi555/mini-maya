@@ -1,5 +1,6 @@
 #include "mygl.h"
 #include <la.h>
+#include <random>
 
 #include <iostream>
 #include <QApplication>
@@ -53,7 +54,6 @@ void MyGL::initializeGL()
 
     //Create the instances of Cylinder and Sphere.
 //    m_geomSquare.create();
-
     //**added**
     m_mesh.create();
 
@@ -161,8 +161,9 @@ void MyGL::keyPressEvent(QKeyEvent *e)
 //**added**
 
 void MyGL::slot_loadOBJFile(const QString &fileName) {
+
     //vectors to store read vertices and faces
-    std::vector<glm::vec3> vertices;
+    std::vector<glm::vec3> vertexPositions;
     std::vector<std::vector<int>> faces;
 
     //read obj file
@@ -177,12 +178,12 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
         QString line = in.readLine();
         QStringList parts = line.split(" ");
         if (parts[0] == "v") {
-            vertices.push_back(glm::vec3(parts[1].toFloat(), parts[2].toFloat(), parts[3].toFloat()));
+            vertexPositions.push_back(glm::vec3(parts[1].toFloat(), parts[2].toFloat(), parts[3].toFloat()));
         } else if (parts[0] == "f") {
             std::vector<int> face;
             for (int i = 1; i < parts.size(); i++) {
                 QStringList subparts = parts[i].split("/");
-                face.push_back(subparts[0].toInt() - 1);  // OBJ indices start at 1
+                face.push_back(subparts[0].toInt() - 1);
             }
             faces.push_back(face);
         }
@@ -192,23 +193,20 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
 
 //    for (int i = 0; i < faces.size(); i++){
 //        for (int j = 0; j < faces[i].size(); j++){
-//            std::cout << faces[i][j] <<  std::endl;
+//            std::cout << faces[i][j];
 //        }
+//        std::cout <<  std::endl;
 //    }
 
     //create half edge data structure
 
-    //map of vertex pair : half edge
-    //used for finding symmetric half edges
+    //map of vertex pair-half edge : used for finding symmetric half edges
     std::map<std::pair<int, int>, HalfEdge*> halfEdgeMap;
 
     //faceIndices is a vertex of indices that define a single face.
     for (auto& faceIndices : faces){
         //create face with random color
-        auto face = std::make_unique<Face>(glm::vec3(0.5, 0.5, 0.5));
-
-        //process pair of vertices
-        //for each pair of vertices a half edge is made
+        auto face = std::make_unique<Face>(generateRandomColor());
 
         //firstHalfEdge gives us a reference to the beginning of the list of half-edges for a face.
         //prevHalfEdge helps us connect each half-edge to the next one as we loop through the vertices of the face.
@@ -221,18 +219,22 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
 
             //A new half-edge is instantiated
             //two consecutive indices
-
             auto halfEdge = std::make_unique<HalfEdge>();
 
             int idx1 = faceIndices[i];
-            int idx2 = faceIndices[(i + 1)] % faceIndices.size();
+            int idx2 = faceIndices[(i + 1) % faceIndices.size()];
 
+            //make vertex unique pointer
+            auto vertex = std::make_unique<Vertex>(vertexPositions[idx2], nullptr);
+            //push vertex into m_mesh's vector of vertices
+            m_mesh.vertices.push_back(std::move(vertex));
             //set face and vertex for half edge
             halfEdge->setFace(face.get());
-            halfEdge->setVertex(new Vertex(vertices[idx2], halfEdge.get()));
+            //halfEdge->setVertex(m_mesh.vertices[idx2].get());
+            halfEdge->setVertex(m_mesh.vertices.back().get());
+
 
             //set up next relationships between halfedges
-            //half-edge (newHE) currently being created is the first half-edge of the face
 
             //on the first iteration, we assign firstHalfEdge to our newly created halfEdge
             if(firstHalfEdge == nullptr){
@@ -259,7 +261,6 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
             //push half edge into mesh's vector
             m_mesh.halfEdges.push_back(std::move(halfEdge));
 
-
             //if we reached the end
             if (it == halfEdgeMap.end()){
                 halfEdgeMap[{idx1, idx2}] = m_mesh.halfEdges.back().get();
@@ -278,19 +279,7 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
         //push face into mesh's face vector
         m_mesh.faces.push_back(std::move(face));
     }
-        //iterate over vertices and push them into the mesh's vertex vector
-        for (const auto& v : vertices) {
-            auto vertex = std::make_unique<Vertex>(v, nullptr);
-            m_mesh.vertices.push_back(std::move(vertex));
-        }
 
-//        //set the half-edge pointer for each vertex.
-//        for (const auto& he : m_mesh.halfEdges) {
-//            Vertex* vertex = he->getVertex();
-//            if (vertex->getHalfEdge() == nullptr) {
-//                vertex->setHalfEdge(he.get());
-//            }
-//        }
         std::cout << "number of vertices: " << m_mesh.vertices.size()<< std::endl;
 
     //std::cout << m_mesh.faces.back().get()->getHalfEdge()->getId()<< std::endl;
@@ -298,4 +287,16 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
     //create the mesh
     m_mesh.create();
 
+}
+
+glm::vec3 MyGL::generateRandomColor() {
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+
+    float red = dist(gen);
+    float green = dist(gen);
+    float blue = dist(gen);
+
+    return glm::vec3(red, green, blue);
 }

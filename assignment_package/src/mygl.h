@@ -11,6 +11,9 @@
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLShaderProgram>
 
+//#include <glm/glm.hpp>
+
+
 
 class MyGL
     : public OpenGLContext
@@ -38,8 +41,7 @@ public:
     void paintGL();
 
     //**added**
-//signals:
-//    void sig_sendMesh(slot_loadOBJFile);
+    glm::vec3 generateRandomColor();
 
 public slots:
     void slot_loadOBJFile(const QString &fileName);
