@@ -22,6 +22,9 @@ private slots:
 
     void on_actionCamera_Controls_triggered();
 
+    //**process obj file
+    void slot_openFile();
+
 private:
     Ui::MainWindow *ui;
 };

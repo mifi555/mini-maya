@@ -2,8 +2,12 @@ INCLUDEPATH += $$PWD
 DEPENDPATH += $$PWD
 
 SOURCES += \
+    $$PWD/face.cpp \
+    $$PWD/halfedge.cpp \
     $$PWD/main.cpp \
     $$PWD/mainwindow.cpp \
+    $$PWD/mesh.cpp \
+    $$PWD/meshcomponent.cpp \
     $$PWD/mygl.cpp \
     $$PWD/shaderprogram.cpp \
     $$PWD/utils.cpp \
@@ -12,11 +16,16 @@ SOURCES += \
     $$PWD/camera.cpp \
     $$PWD/cameracontrolshelp.cpp \
     $$PWD/openglcontext.cpp \
-    $$PWD/scene/squareplane.cpp
+    $$PWD/scene/squareplane.cpp \
+    $$PWD/vertex.cpp
 
 HEADERS += \
+    $$PWD/face.h \
+    $$PWD/halfedge.h \
     $$PWD/la.h \
     $$PWD/mainwindow.h \
+    $$PWD/mesh.h \
+    $$PWD/meshcomponent.h \
     $$PWD/mygl.h \
     $$PWD/shaderprogram.h \
     $$PWD/utils.h \
@@ -25,4 +34,5 @@ HEADERS += \
     $$PWD/cameracontrolshelp.h \
     $$PWD/openglcontext.h \
     $$PWD/scene/squareplane.h\
-    $$PWD/smartpointerhelp.h
+    $$PWD/smartpointerhelp.h \
+    $$PWD/vertex.h

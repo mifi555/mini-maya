@@ -6,6 +6,7 @@
 #include <shaderprogram.h>
 #include <scene/squareplane.h>
 #include "camera.h"
+#include "mesh.h"
 
 #include <QOpenGLVertexArrayObject>
 #include <QOpenGLShaderProgram>
@@ -25,6 +26,8 @@ private:
 
     Camera m_glCamera;
 
+    //**added**
+    Mesh m_mesh;
 
 public:
     explicit MyGL(QWidget *parent = nullptr);
@@ -33,6 +36,15 @@ public:
     void initializeGL();
     void resizeGL(int w, int h);
     void paintGL();
+
+    //**added**
+//signals:
+//    void sig_sendMesh(slot_loadOBJFile);
+
+public slots:
+    void slot_loadOBJFile(const QString &fileName);
+
+
 
 protected:
     void keyPressEvent(QKeyEvent *e);
