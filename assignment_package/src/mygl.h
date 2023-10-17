@@ -13,6 +13,11 @@
 
 //#include <glm/glm.hpp>
 
+#include "vertexdisplay.h"
+#include "halfedgedisplay.h"
+#include "facedisplay.h"
+
+
 
 
 class MyGL
@@ -31,6 +36,11 @@ private:
 
     //**added**
     Mesh m_mesh;
+
+    //**Graphical User Interface displays
+//    VertexDisplay m_vertDisplay;
+//    HalfEdgeDisplay m_halfEdgeDisplay;
+//    FaceDisplay m_faceDisplay;
 
 public:
     explicit MyGL(QWidget *parent = nullptr);
