@@ -9,7 +9,6 @@ SOURCES += \
     $$PWD/main.cpp \
     $$PWD/mainwindow.cpp \
     $$PWD/mesh.cpp \
-    $$PWD/meshcomponent.cpp \
     $$PWD/mygl.cpp \
     $$PWD/shaderprogram.cpp \
     $$PWD/utils.cpp \
@@ -30,7 +29,6 @@ HEADERS += \
     $$PWD/la.h \
     $$PWD/mainwindow.h \
     $$PWD/mesh.h \
-    $$PWD/meshcomponent.h \
     $$PWD/mygl.h \
     $$PWD/shaderprogram.h \
     $$PWD/utils.h \

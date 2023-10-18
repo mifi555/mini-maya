@@ -1,13 +1,18 @@
 #pragma once
 
 
+#include <QTreeWidgetItem>
 #include <iostream>
 #include <memory>
 #include <glm/glm.hpp>
 
+#include <QListWidget>
+#include <QListWidgetItem>
+
 class HalfEdge;
 
-class Face {
+//**added for GUI, have class inherit fro QListWidgetItem
+class Face : public QListWidgetItem {
 private:
     HalfEdge *halfEdge;
     glm::vec3 color;

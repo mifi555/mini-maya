@@ -38,9 +38,9 @@ private:
     Mesh m_mesh;
 
     //**Graphical User Interface displays
-//    VertexDisplay m_vertDisplay;
-//    HalfEdgeDisplay m_halfEdgeDisplay;
-//    FaceDisplay m_faceDisplay;
+    VertexDisplay m_vertDisplay;
+    HalfEdgeDisplay m_halfEdgeDisplay;
+    FaceDisplay m_faceDisplay;
 
 public:
     explicit MyGL(QWidget *parent = nullptr);
@@ -52,6 +52,18 @@ public:
 
     //**added**
     glm::vec3 generateRandomColor();
+
+    //**Vertex, HalfEdge, Face selection flags for paintGL
+    bool m_selectVertex = false;
+    bool m_selectHalfEdge = false;
+    bool m_selectFace = false;
+
+    //**Visual Debugging Tools
+    HalfEdge* m_selectedHalfEdgePtr = nullptr;
+    Vertex* m_selectedVertexPtr = nullptr;
+    Face* m_selectedFacePtr = nullptr;
+
+    friend class MainWindow;
 
 public slots:
     void slot_loadOBJFile(const QString &fileName);

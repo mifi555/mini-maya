@@ -15,7 +15,10 @@ MyGL::MyGL(QWidget *parent)
     : OpenGLContext(parent),
       m_geomSquare(this),
       m_progLambert(this), m_progFlat(this),
-    m_glCamera(), m_mesh(this)
+    m_glCamera(), m_mesh(this),
+    m_vertDisplay(this),
+    m_halfEdgeDisplay(this),
+    m_faceDisplay(this)
 
 {
     setFocusPolicy(Qt::StrongFocus);
@@ -52,8 +55,6 @@ void MyGL::initializeGL()
     // Create a Vertex Attribute Object
     glGenVertexArrays(1, &vao);
 
-    //Create the instances of Cylinder and Sphere.
-//    m_geomSquare.create();
     //**added**
     m_mesh.create();
 
@@ -95,23 +96,28 @@ void MyGL::paintGL()
     m_progLambert.setCamPos(m_glCamera.eye);
     m_progFlat.setModelMatrix(glm::mat4(1.f));
 
-    //Create a model matrix. This one rotates the square by PI/4 radians then translates it by <-2,0,0>.
-    //Note that we have to transpose the model matrix before passing it to the shader
-    //This is because OpenGL expects column-major matrices, but you've
-    //implemented row-major matrices.
-//    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(-2,0,0)) * glm::rotate(glm::mat4(), 0.25f * 3.14159f, glm::vec3(0,1,0));
-//    //Send the geometry's transformation matrix to the shader
-//    m_progLambert.setModelMatrix(model);
-//    //Draw the example sphere using our lambert shader
-//    m_progLambert.draw(m_geomSquare);
-
-//    //Now do the same to render the cylinder
-//    //We've rotated it -45 degrees on the Z axis, then translated it to the point <2,2,0>
-//    model = glm::translate(glm::mat4(1.0f), glm::vec3(2,2,0)) * glm::rotate(glm::mat4(1.0f), glm::radians(-45.0f), glm::vec3(0,0,1));
-//    m_progLambert.setModelMatrix(model);
-//    m_progLambert.draw(m_geomSquare);
-
     m_progFlat.draw(m_mesh);
+
+
+    //**added**
+    glDisable(GL_DEPTH_TEST);
+
+    //draw components
+    if(m_selectVertex){
+    m_progFlat.draw(m_vertDisplay);
+    }
+
+    if(m_selectHalfEdge){
+    m_progFlat.draw(m_halfEdgeDisplay);
+    }
+
+    if(m_selectFace){
+    m_progFlat.draw(m_faceDisplay);
+    }
+
+    glEnable(GL_DEPTH_TEST);
+
+
 }
 
 
@@ -154,6 +160,67 @@ void MyGL::keyPressEvent(QKeyEvent *e)
         m_glCamera = Camera(this->width(), this->height());
     }
     m_glCamera.RecomputeAttributes();
+
+
+    //**Visual Debugging Tools: added keys
+    if(e->key() == Qt::Key_N) {
+        if(m_selectedHalfEdgePtr) {
+            m_selectedHalfEdgePtr = m_selectedHalfEdgePtr->getNext();
+
+            m_selectHalfEdge = true;
+            m_selectVertex = false;
+            m_selectFace = false;
+            m_halfEdgeDisplay.updateHalfEdge(m_selectedHalfEdgePtr);
+        }
+    } else if(e->key() == Qt::Key_M) {
+        if(m_selectedHalfEdgePtr) {
+            m_selectedHalfEdgePtr = m_selectedHalfEdgePtr->getSym();
+
+            m_selectHalfEdge = true;
+            m_selectVertex = false;
+            m_selectFace = false;
+            m_halfEdgeDisplay.updateHalfEdge(m_selectedHalfEdgePtr);
+        }
+    } else if(e->key() == Qt::Key_F) {
+        if(m_selectedHalfEdgePtr) {
+            m_selectedFacePtr = m_selectedHalfEdgePtr->getFace();
+
+            m_selectFace = true;
+            m_selectHalfEdge = false;
+            m_selectVertex = false;
+            m_faceDisplay.updateFace(m_selectedFacePtr);
+        }
+    } else if(e->key() == Qt::Key_V) {
+        if(m_selectedHalfEdgePtr) {
+            m_selectedVertexPtr = m_selectedHalfEdgePtr->getVertex();
+
+            m_selectVertex = true;
+            m_selectHalfEdge = false;
+            m_selectFace = false;
+
+            m_vertDisplay.updateVertex(m_selectedVertexPtr);
+        }
+    } else if(e->key() == Qt::Key_H) {
+        //SHIFT + H
+        if(e->modifiers() & Qt::ShiftModifier) {
+            if(m_selectedFacePtr) {
+                m_selectedHalfEdgePtr = m_selectedFacePtr->getHalfEdge();
+
+                m_selectHalfEdge = true;
+                m_selectVertex = false;
+                m_selectFace = false;
+                m_halfEdgeDisplay.updateHalfEdge(m_selectedHalfEdgePtr);
+            }
+        } else {
+            if(m_selectedVertexPtr) {
+                m_selectedHalfEdgePtr = m_selectedVertexPtr->getHalfEdge();
+                m_selectHalfEdge = true;
+                m_selectVertex = false;
+                m_selectFace = false;
+                m_halfEdgeDisplay.updateHalfEdge(m_selectedHalfEdgePtr);
+            }
+        }
+    }
     update();  // Calls paintGL, among other things
 }
 
@@ -190,26 +257,18 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
     }
 
     file.close();
-
-//    for (int i = 0; i < faces.size(); i++){
-//        for (int j = 0; j < faces[i].size(); j++){
-//            std::cout << faces[i][j];
-//        }
-//        std::cout <<  std::endl;
-//    }
-
     //create half edge data structure
 
     //map of vertex pair-half edge : used for finding symmetric half edges
     std::map<std::pair<int, int>, HalfEdge*> halfEdgeMap;
 
-    //faceIndices is a vertex of indices that define a single face.
+    //faceIndices is a vertex of indices that define a single face
     for (auto& faceIndices : faces){
         //create face with random color
         auto face = std::make_unique<Face>(generateRandomColor());
 
-        //firstHalfEdge gives us a reference to the beginning of the list of half-edges for a face.
-        //prevHalfEdge helps us connect each half-edge to the next one as we loop through the vertices of the face.
+        //firstHalfEdge gives us a reference to the beginning of the list of half-edges for a face
+        //prevHalfEdge helps us connect each half-edge to the next one as we loop through the vertices of the face
         HalfEdge *firstHalfEdge = nullptr;
         //prevhalfedge points to the last created half edge
         HalfEdge *prevHalfEdge = nullptr;
@@ -217,8 +276,6 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
         //faceIndices.size(): number of vertices that constitute that face.
         for (size_t i = 0; i < faceIndices.size(); i++){
 
-            //A new half-edge is instantiated
-            //two consecutive indices
             auto halfEdge = std::make_unique<HalfEdge>();
 
             int idx1 = faceIndices[i];
@@ -230,7 +287,6 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
             m_mesh.vertices.push_back(std::move(vertex));
             //set face and vertex for half edge
             halfEdge->setFace(face.get());
-            //halfEdge->setVertex(m_mesh.vertices[idx2].get());
             halfEdge->setVertex(m_mesh.vertices.back().get());
 
 
@@ -266,10 +322,6 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
                 halfEdgeMap[{idx1, idx2}] = m_mesh.halfEdges.back().get();
             }
 
-            //std::cout << m_mesh.halfEdges.back().get()->getVertex()->getId() << std::endl;
-
-            //push half edge into mesh's vector
-            //m_mesh.halfEdges.push_back(std::move(halfEdge));
         }
         //close the loop by having the prevHalfEdge point to the first half edge
         prevHalfEdge->setNext(firstHalfEdge);
@@ -279,10 +331,6 @@ void MyGL::slot_loadOBJFile(const QString &fileName) {
         //push face into mesh's face vector
         m_mesh.faces.push_back(std::move(face));
     }
-
-        std::cout << "number of vertices: " << m_mesh.vertices.size()<< std::endl;
-
-    //std::cout << m_mesh.faces.back().get()->getHalfEdge()->getId()<< std::endl;
 
     //create the mesh
     m_mesh.create();

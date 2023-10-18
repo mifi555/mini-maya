@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include "QtWidgets/qlistwidget.h"
 #include <QMainWindow>
 
 
@@ -24,6 +25,11 @@ private slots:
 
     //**process obj file
     void slot_openFile();
+
+    //**GUI
+    void slot_vertexSelected(QListWidgetItem *item);
+    void slot_halfEdgeSelected(QListWidgetItem *item);
+    void slot_faceSelected(QListWidgetItem *item);
 
 private:
     Ui::MainWindow *ui;

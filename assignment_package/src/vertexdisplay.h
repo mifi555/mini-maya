@@ -10,9 +10,14 @@ protected:
     Vertex *representedVertex;
 
 public:
+
+    VertexDisplay(OpenGLContext* context);
     // Creates VBO data to make a visual
     // representation of the currently selected Vertex
     void create() override;
+
+    GLenum drawMode() override;
+
     // Change which Vertex representedVertex points to
     void updateVertex(Vertex*);
 };

@@ -3,11 +3,14 @@
 #include <memory>
 #include <glm/glm.hpp>
 
+#include <QListWidget>
+#include <QListWidgetItem>
+
 class Face;
 class Vertex;
 
-
-class HalfEdge {
+//**added for GUI, have class inherit fro QListWidgetItem
+class HalfEdge : public QListWidgetItem{
 private:
     HalfEdge *next;
     HalfEdge *sym;

@@ -37,7 +37,6 @@ void HalfEdge::setSym(HalfEdge* s) {
 
 void HalfEdge::setFace(Face* f) {
     face = f;
-    //f->setHalfEdge(this);
 }
 
 void HalfEdge::setVertex(Vertex* v) {

@@ -1,0 +1,11 @@
+CIS5620 HW05 HELPLOG
+
+**USING 1 LATE DAY FOR THIS HOMEWORK**
+
+10/16 Received help during after class office hours in the SIG lab.
+
+10/17 Received help from Linda during office hours.
+
+10/17 Received help on creating my half edge mesh data structure + debugging from Instructor Mally.
+
+10/17 Asked clarifying questions on Ed.

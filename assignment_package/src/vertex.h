@@ -4,9 +4,13 @@
 #include <memory>
 #include <glm/glm.hpp>
 
+#include <QListWidget>
+#include <QListWidgetItem>
+
 class HalfEdge;
 
-class Vertex {
+//**added for GUI, have class inherit fro QListWidgetItem
+class Vertex : public QListWidgetItem {
 private:
     glm::vec3 position;
     HalfEdge *halfEdge;

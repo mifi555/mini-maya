@@ -9,8 +9,12 @@ protected:
     HalfEdge *representedHalfEdge;
 
 public:
+    HalfEdgeDisplay(OpenGLContext* context);
+
     void create() override;
     void updateHalfEdge(HalfEdge*);
+
+    GLenum drawMode() override;
 };
 
 #endif // HALFEDGEDISPLAY_H

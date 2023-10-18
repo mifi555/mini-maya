@@ -10,8 +10,12 @@ protected:
     Face *representedFace;
 
 public:
+    FaceDisplay(OpenGLContext* context);
+
     void create() override;
     void updateFace(Face*);
+
+    GLenum drawMode() override;
 };
 
 #endif // FACEDISPLAY_H

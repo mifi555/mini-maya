@@ -17,20 +17,11 @@ void Mesh::create() {
         std::vector<GLuint> idx;
 
         int totalNumberOfVerticesInMesh = 0;
-        //std::cout << faces.size()<< std::endl;
         for (const auto& face : this->faces) {
             HalfEdge *start_edge = face->getHalfEdge();
             HalfEdge *current_edge = start_edge;
 
             // Calculate face normal
-
-            std::cout << "vertex" << std::endl;
-
-            std::cout << "vertex id: " << current_edge->getVertex()->getId() << std::endl;
-
-
-
-            //GLuint first_vertex_idx = pos.size();
 
             //make a counter of the number of indices that constitue the face
             int numFaceVerts = 0;
@@ -43,8 +34,6 @@ void Mesh::create() {
                 glm::vec3 normal = glm::normalize(glm::cross(v2 - v1, v3 - v1));
 
                 pos.push_back(glm::vec4(current_edge->getVertex()->getPosition(), 1));
-
-                std::cout << pos.back().x << " " << pos.back().y << " " << pos.back().z << std::endl;
 
                 nor.push_back(glm::vec4(normal, 1));
                 col.push_back(glm::vec4(face->getColor(), 1));
@@ -62,23 +51,10 @@ void Mesh::create() {
                 idx.push_back(totalNumberOfVerticesInMesh + i + 1);
                 idx.push_back(totalNumberOfVerticesInMesh + i + 2);
 
-//                std::cout << totalNumberOfVerticesInMesh << std::endl;
-//                std::cout << totalNumberOfVerticesInMesh + i + 1 << std::endl;
-//                std::cout << totalNumberOfVerticesInMesh + i + 2 << std::endl;
-
-
-
             }
 
             totalNumberOfVerticesInMesh += numFaceVerts;
         }
-
-//        std::cout << idx.size() << std::endl;
-//        std::cout << pos.size() << std::endl;
-//        std::cout << nor.size() << std::endl;
-//        std::cout << col.size() << std::endl;
-
-
 
         count = idx.size();
 
