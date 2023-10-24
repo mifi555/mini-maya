@@ -22,6 +22,8 @@ void FaceDisplay::create() {
 
     int i = 0;
     do {
+        std::cout << "i: " << i << std::endl;
+
         //highlight all of the edges around the faces
 
         //start pos of edge

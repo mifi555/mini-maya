@@ -22,3 +22,7 @@ int Face::getId() const {
 void Face::setHalfEdge(HalfEdge* he) {
     halfEdge = he;
 }
+
+void Face::setColor(glm::vec3 newColor) {
+    color = newColor;
+}

@@ -39,4 +39,8 @@ public:
     void TranslateAlongLook(float amt);
     void TranslateAlongRight(float amt);
     void TranslateAlongUp(float amt);
+
+    //**added as a part of hw06
+    float theta, phi, zoom;
+
 };

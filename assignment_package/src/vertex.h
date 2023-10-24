@@ -23,5 +23,8 @@ public:
     HalfEdge* getHalfEdge() const;
     int getId() const;
     void setHalfEdge(HalfEdge* he);
+    void setPosition(glm::vec3 pos);
+
+    friend class HalfEdge;
 };
 

@@ -25,5 +25,6 @@ public:
     HalfEdge* getHalfEdge() const;
     int getId() const;
     void setHalfEdge(HalfEdge* he);
+    void setColor(glm::vec3 newColor);
 };
 

@@ -24,5 +24,14 @@ public:
     //Implemented by subclasses of Drawable
     void create() override;
 
+
+    //Catmull Clark subdivision??
+    //step 1: adding new centroids and edge vertices first
+    //step 2: moving the original vertices inward
+    //step 3?: connecting these vertices with half edges
+
+    //separate function to quadrangulate a face given the new vertices
+
+
 };
 

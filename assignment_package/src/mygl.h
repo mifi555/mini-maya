@@ -65,6 +65,8 @@ public:
 
     friend class MainWindow;
 
+
+
 public slots:
     void slot_loadOBJFile(const QString &fileName);
 

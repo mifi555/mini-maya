@@ -159,19 +159,21 @@ void MyGL::keyPressEvent(QKeyEvent *e)
     } else if (e->key() == Qt::Key_R) {
         m_glCamera = Camera(this->width(), this->height());
     }
-    m_glCamera.RecomputeAttributes();
-
 
     //**Visual Debugging Tools: added keys
-    if(e->key() == Qt::Key_N) {
+
+    //N: NEXT half-edge of the currently selected half-edge
+    else if(e->key() == Qt::Key_N) {
         if(m_selectedHalfEdgePtr) {
             m_selectedHalfEdgePtr = m_selectedHalfEdgePtr->getNext();
 
             m_selectHalfEdge = true;
             m_selectVertex = false;
             m_selectFace = false;
+
             m_halfEdgeDisplay.updateHalfEdge(m_selectedHalfEdgePtr);
         }
+        //M: SYM half-edge of the currently selected half-edge
     } else if(e->key() == Qt::Key_M) {
         if(m_selectedHalfEdgePtr) {
             m_selectedHalfEdgePtr = m_selectedHalfEdgePtr->getSym();
@@ -179,8 +181,10 @@ void MyGL::keyPressEvent(QKeyEvent *e)
             m_selectHalfEdge = true;
             m_selectVertex = false;
             m_selectFace = false;
+
             m_halfEdgeDisplay.updateHalfEdge(m_selectedHalfEdgePtr);
         }
+        //F: FACE of the currently selected half-edge
     } else if(e->key() == Qt::Key_F) {
         if(m_selectedHalfEdgePtr) {
             m_selectedFacePtr = m_selectedHalfEdgePtr->getFace();
@@ -190,6 +194,7 @@ void MyGL::keyPressEvent(QKeyEvent *e)
             m_selectVertex = false;
             m_faceDisplay.updateFace(m_selectedFacePtr);
         }
+        //V: VERTEX of the currently selected half-edge
     } else if(e->key() == Qt::Key_V) {
         if(m_selectedHalfEdgePtr) {
             m_selectedVertexPtr = m_selectedHalfEdgePtr->getVertex();
@@ -201,7 +206,7 @@ void MyGL::keyPressEvent(QKeyEvent *e)
             m_vertDisplay.updateVertex(m_selectedVertexPtr);
         }
     } else if(e->key() == Qt::Key_H) {
-        //SHIFT + H
+        //Shift + H: HALF-EDGE of the currently selected face
         if(e->modifiers() & Qt::ShiftModifier) {
             if(m_selectedFacePtr) {
                 m_selectedHalfEdgePtr = m_selectedFacePtr->getHalfEdge();
@@ -211,6 +216,7 @@ void MyGL::keyPressEvent(QKeyEvent *e)
                 m_selectFace = false;
                 m_halfEdgeDisplay.updateHalfEdge(m_selectedHalfEdgePtr);
             }
+            //H: HALF-EDGE of the currently selected vertex
         } else {
             if(m_selectedVertexPtr) {
                 m_selectedHalfEdgePtr = m_selectedVertexPtr->getHalfEdge();
@@ -221,121 +227,153 @@ void MyGL::keyPressEvent(QKeyEvent *e)
             }
         }
     }
+    m_glCamera.RecomputeAttributes();
+
     update();  // Calls paintGL, among other things
 }
 
 
 //**added**
 
-void MyGL::slot_loadOBJFile(const QString &fileName) {
+    void MyGL::slot_loadOBJFile(const QString &fileName) {
 
-    //vectors to store read vertices and faces
-    std::vector<glm::vec3> vertexPositions;
-    std::vector<std::vector<int>> faces;
+        //vectors to store read vertices and faces
+        std::vector<glm::vec3> vertexPositions;
+        std::vector<std::vector<int>> faces;
 
-    //read obj file
-    QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qDebug() << "Failed to open" << fileName;
-        return;
-    }
-
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine();
-        QStringList parts = line.split(" ");
-        if (parts[0] == "v") {
-            vertexPositions.push_back(glm::vec3(parts[1].toFloat(), parts[2].toFloat(), parts[3].toFloat()));
-        } else if (parts[0] == "f") {
-            std::vector<int> face;
-            for (int i = 1; i < parts.size(); i++) {
-                QStringList subparts = parts[i].split("/");
-                face.push_back(subparts[0].toInt() - 1);
-            }
-            faces.push_back(face);
+        //read obj file
+        QFile file(fileName);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            qDebug() << "Failed to open" << fileName;
+            return;
         }
-    }
 
-    file.close();
-    //create half edge data structure
-
-    //map of vertex pair-half edge : used for finding symmetric half edges
-    std::map<std::pair<int, int>, HalfEdge*> halfEdgeMap;
-
-    //faceIndices is a vertex of indices that define a single face
-    for (auto& faceIndices : faces){
-        //create face with random color
-        auto face = std::make_unique<Face>(generateRandomColor());
-
-        //firstHalfEdge gives us a reference to the beginning of the list of half-edges for a face
-        //prevHalfEdge helps us connect each half-edge to the next one as we loop through the vertices of the face
-        HalfEdge *firstHalfEdge = nullptr;
-        //prevhalfedge points to the last created half edge
-        HalfEdge *prevHalfEdge = nullptr;
-
-        //faceIndices.size(): number of vertices that constitute that face.
-        for (size_t i = 0; i < faceIndices.size(); i++){
-
-            auto halfEdge = std::make_unique<HalfEdge>();
-
-            int idx1 = faceIndices[i];
-            int idx2 = faceIndices[(i + 1) % faceIndices.size()];
-
-            //make vertex unique pointer
-            auto vertex = std::make_unique<Vertex>(vertexPositions[idx2], nullptr);
-            //push vertex into m_mesh's vector of vertices
-            m_mesh.vertices.push_back(std::move(vertex));
-            //set face and vertex for half edge
-            halfEdge->setFace(face.get());
-            halfEdge->setVertex(m_mesh.vertices.back().get());
-
-
-            //set up next relationships between halfedges
-
-            //on the first iteration, we assign firstHalfEdge to our newly created halfEdge
-            if(firstHalfEdge == nullptr){
-                firstHalfEdge = halfEdge.get();
+        QTextStream in(&file);
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList parts = line.split(" ");
+            if (parts[0] == "v") {
+                vertexPositions.push_back(glm::vec3(parts[1].toFloat(), parts[2].toFloat(), parts[3].toFloat()));
+            } else if (parts[0] == "f") {
+                std::vector<int> face;
+                for (int i = 1; i < parts.size(); i++) {
+                    QStringList subparts = parts[i].split("/");
+                    face.push_back(subparts[0].toInt() - 1);
+                }
+                faces.push_back(face);
             }
-            if(prevHalfEdge != nullptr){
-                //on later iterations, set next pointer of the prevhalfedge to the current halfedge
-                prevHalfEdge->setNext(halfEdge.get());
-            }
-
-            //close the loop for half-edges of this face
-            prevHalfEdge = halfEdge.get();
-
-            //Setting up SYM pointers
-            //finds position where the key is present in the map
-            auto it = halfEdgeMap.find({idx2, idx1});
-
-            if(it != halfEdgeMap.end()){
-                //.second retrieves value aka the half edge
-                halfEdge->setSym(it->second);
-                it->second->setSym(halfEdge.get());
-            }
-
-            //push half edge into mesh's vector
-            m_mesh.halfEdges.push_back(std::move(halfEdge));
-
-            //if we reached the end
-            if (it == halfEdgeMap.end()){
-                halfEdgeMap[{idx1, idx2}] = m_mesh.halfEdges.back().get();
-            }
-
         }
-        //close the loop by having the prevHalfEdge point to the first half edge
-        prevHalfEdge->setNext(firstHalfEdge);
 
-        //set face of half edge
-        face->setHalfEdge(firstHalfEdge);
-        //push face into mesh's face vector
-        m_mesh.faces.push_back(std::move(face));
+        file.close();
+        //create half edge data structure
+
+        //map of vertex pair-half edge : used for finding symmetric half edges
+        std::map<std::pair<int, int>, HalfEdge*> halfEdgeMap;
+
+        //* vertex map
+        std::unordered_map<int, Vertex*> vertexMap;
+
+
+        //faceIndices is a vertex of indices that define a single face
+        for (auto& faceIndices : faces){
+            //create face with random color
+            auto face = std::make_unique<Face>(generateRandomColor());
+
+            //firstHalfEdge gives us a reference to the beginning of the list of half-edges for a face
+            //prevHalfEdge helps us connect each half-edge to the next one as we loop through the vertices of the face
+            HalfEdge *firstHalfEdge = nullptr;
+            //prevhalfedge points to the last created half edge
+            HalfEdge *prevHalfEdge = nullptr;
+
+            //faceIndices.size(): number of vertices that constitute that face.
+            for (size_t i = 0; i < faceIndices.size(); i++){
+
+                auto halfEdge = std::make_unique<HalfEdge>();
+
+                int idx1 = faceIndices[i];
+                int idx2 = faceIndices[(i + 1) % faceIndices.size()];
+
+
+                //**
+//                //make vertex unique pointer
+//                auto vertex = std::make_unique<Vertex>(vertexPositions[idx2], nullptr);
+//                //push vertex into m_mesh's vector of vertices
+//                m_mesh.vertices.push_back(std::move(vertex));
+//                //set face and vertex for half edge
+//                halfEdge->setFace(face.get());
+//                halfEdge->setVertex(m_mesh.vertices.back().get());
+               //**
+
+                //prevent from creating duplicate vertices
+                Vertex* vertexPtr;
+                //if we haven't created a vertex for a particular index, you create it, store it in your mesh's vertices list, and update the map.
+                if(vertexMap.find(idx2) == vertexMap.end()) {
+                    auto vertex = std::make_unique<Vertex>(vertexPositions[idx2], nullptr);
+                    m_mesh.vertices.push_back(std::move(vertex));
+                    vertexPtr = m_mesh.vertices.back().get();
+                    vertexMap[idx2] = vertexPtr;
+
+                //if we've already created a vertex for a particular index, you simply retrieve it from the map and use it.
+                } else {
+                    vertexPtr = vertexMap[idx2];
+                }
+                halfEdge->setFace(face.get());
+                halfEdge->setVertex(vertexPtr);
+
+                //set up next relationships between halfedges
+
+                //on the first iteration, we assign firstHalfEdge to our newly created halfEdge
+                if(firstHalfEdge == nullptr){
+                    firstHalfEdge = halfEdge.get();
+                }
+                if(prevHalfEdge != nullptr){
+                    //on later iterations, set next pointer of the prevhalfedge to the current halfedge
+                    prevHalfEdge->setNext(halfEdge.get());
+                }
+
+                //close the loop for half-edges of this face
+                prevHalfEdge = halfEdge.get();
+
+                //Setting up SYM pointers
+                //finds position where the key is present in the map
+                int smallID = std::min(idx1, idx2);
+                int largeID = std::max(idx1, idx2);
+
+                auto it = halfEdgeMap.find({smallID, largeID});
+
+                //std::cout << "Key for HE " << halfEdge->getId() << " is {" << smallID << ", " << largeID << "}." << std::endl;
+
+                if(it != halfEdgeMap.end()){
+                    //std::cout << "Found KVP for pair {" << smallID << ", " << largeID << "}. Value was HE " << it->second->getId() << std::endl;
+                    //.second retrieves value aka the half edge
+                    halfEdge->setSym(it->second);
+                    it->second->setSym(halfEdge.get());
+                }
+                //push half edge into mesh's vector
+                m_mesh.halfEdges.push_back(std::move(halfEdge));
+
+                //if we reached the end
+                if (it == halfEdgeMap.end()){
+                    halfEdgeMap[{smallID, largeID}] = m_mesh.halfEdges.back().get();
+                }
+
+
+
+
+            }
+            //close the loop by having the prevHalfEdge point to the first half edge
+            prevHalfEdge->setNext(firstHalfEdge);
+
+            //set face of half edge
+            face->setHalfEdge(firstHalfEdge);
+            //push face into mesh's face vector
+            m_mesh.faces.push_back(std::move(face));
+        }
+
+        //create the mesh
+        m_mesh.create();
+
     }
-
-    //create the mesh
-    m_mesh.create();
-
-}
 
 glm::vec3 MyGL::generateRandomColor() {
     std::random_device rd;

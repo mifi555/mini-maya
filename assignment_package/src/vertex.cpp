@@ -1,4 +1,5 @@
 #include "vertex.h"
+#include "halfedge.h"
 
 int Vertex::lastID = 0;
 
@@ -22,4 +23,11 @@ int Vertex::getId() const {
 
 void Vertex::setHalfEdge(HalfEdge* he) {
     halfEdge = he;
+    //he->setVertex(this);
+
 }
+
+void Vertex::setPosition(glm::vec3 pos){
+    position = pos;
+}
+

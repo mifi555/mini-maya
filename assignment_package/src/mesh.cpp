@@ -17,6 +17,7 @@ void Mesh::create() {
         std::vector<GLuint> idx;
 
         int totalNumberOfVerticesInMesh = 0;
+
         for (const auto& face : this->faces) {
             HalfEdge *start_edge = face->getHalfEdge();
             HalfEdge *current_edge = start_edge;
@@ -27,7 +28,6 @@ void Mesh::create() {
             int numFaceVerts = 0;
 
             do {
-
                 glm::vec3 v1 = current_edge->getVertex()->getPosition();
                 glm::vec3 v2 = current_edge->getNext()->getVertex()->getPosition();
                 glm::vec3 v3 = current_edge->getNext()->getNext()->getVertex()->getPosition();
@@ -41,7 +41,6 @@ void Mesh::create() {
                 current_edge = current_edge->getNext();
 
                 numFaceVerts++;
-
             } while (current_edge != start_edge);
 
 
@@ -73,8 +72,6 @@ void Mesh::create() {
         generateCol();
         mp_context->glBindBuffer(GL_ARRAY_BUFFER, bufCol);
         mp_context->glBufferData(GL_ARRAY_BUFFER, col.size() * sizeof(glm::vec4), col.data(), GL_STATIC_DRAW);
-
-
     }
 
 

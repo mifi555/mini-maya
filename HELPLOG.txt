@@ -9,3 +9,9 @@ CIS5620 HW05 HELPLOG
 10/17 Received help on creating my half edge mesh data structure + debugging from Instructor Mally.
 
 10/17 Asked clarifying questions on Ed.
+
+----
+
+CIS5620 HW06 HELPLOG
+
+10/20 11:30AM Received help from Linda during office hours with regards to implementing the spherical camera.

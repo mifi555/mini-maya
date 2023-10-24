@@ -17,7 +17,7 @@ void HalfEdgeDisplay::HalfEdgeDisplay::create() {
         col.push_back(glm::vec4(1, 0, 0, 1));
 
         //end vertex (yellow)
-        pos.push_back(glm::vec4(representedHalfEdge->getNext()->getVertex()->getPosition(), 1));
+        pos.push_back(glm::vec4(representedHalfEdge->getSym()->getVertex()->getPosition(), 1));
         col.push_back(glm::vec4(1, 1, 0, 1));
 
         idx.push_back(0);
