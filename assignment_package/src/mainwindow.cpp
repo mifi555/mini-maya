@@ -354,7 +354,7 @@ void MainWindow::slot_modifyVertexPositionZ(double value){
 
 void MainWindow::slot_ccSubdivide(){
 
-            //step 1: adding the new centroids
+            // ** COMPUTE CENTROIDS **
             std::map<Face*, Vertex*> faceCentroids;
 
             for (auto &face : ui->mygl->m_mesh.faces){
@@ -376,32 +376,25 @@ void MainWindow::slot_ccSubdivide(){
 
                faceCentroids[face.get()] = centroid.get();
             }
-            //6 centroids
+            //6 centroids for cube
 
-            //step 2: add edge middpoint vertices
-            //std::map<HalfEdge*, Vertex*> edgeMidpoints;
-            //    for each edge in mesh:
+            //** ADD MIDPOINT VERTICES **
 
             std::set<HalfEdge*> visitedEdges;
+            int fullEdges = ui->mygl->m_mesh.halfEdges.size()/2;
 
             for(auto &he1 : ui->mygl->m_mesh.halfEdges){
 
                HalfEdge *he2 = he1->getSym();
 
+               //make sure if we haven't dealt with the half edge already
+               if (visitedEdges.find(he1.get()) == visitedEdges.end()) {
 
-               glm::vec3 midPoint = glm::vec3(0.0f);
+                visitedEdges.insert(he1.get());
+                visitedEdges.insert(he2);
 
-               //if edge has two adjacent faces:
-//               if(he1->getFace() && he1->getSym()->getFace()){
-//                //e = (v1 + v2 + f1 + f2) / 4
-//                midPoint = (he1->getVertex()->getPosition() + he1->getSym()->getVertex()->getPosition() + faceCentroids[he1->getFace()]->getPosition() + faceCentroids[he1->getSym()->getFace()]->getPosition())/4.0f;
-//               }
-//               //if edge has only one adjacent faces
-//               else if(he1->getFace() == nullptr || he1->getSym()->getFace() == nullptr) {
-//                //e = (v1 + v2 + f) / 3
-//                midPoint = (he1->getVertex()->getPosition() + he1->getSym()->getVertex()->getPosition() + faceCentroids[he1->getFace()]->getPosition())/3.0f;
-//               }
-               // Get the start and end vertices of the current HalfEdge
+                glm::vec3 midPoint = glm::vec3(0.0f);
+
                Vertex* v1 = he1->getVertex();
                Vertex* v2 = he2->getVertex();
 
@@ -409,16 +402,12 @@ void MainWindow::slot_ccSubdivide(){
                 midPoint = midPoint + faceCentroids[he1->getFace()]->getPosition() + faceCentroids[he1->getSym()->getFace()]->getPosition();
                 midPoint /= 4.0f;
 
-
-
                //compute midPoint vertex
                auto v3 = std::make_unique<Vertex>(midPoint, nullptr);
 
                //**Similar Code to Add Vertex Between Two HalfEdges
 
                //Insert a new vertex between V1 and V2
-
-
 
                //create new vertex at midpoint
 
@@ -451,13 +440,12 @@ void MainWindow::slot_ccSubdivide(){
                he1B->setSym(he2);
 
             }
+            }
 
-               //step 3: smooth original
+            //**SMOOTHEN VERTICES**//
+            for (int i = 0; i< (int) ui->mygl->m_mesh.vertices.size(); i++){
 
-               //adjust original vertices
-               //v' = (n-2)v/n + sum(e)/n2 + sum(f)/n2
-
-               for (auto &v : ui->mygl->m_mesh.vertices){
+                Vertex* v = ui->mygl->m_mesh.vertices[i].get();
 
                 //sum of all adjacent midpoints to v
                 glm::vec3 sumE = glm::vec3(0.0f);
@@ -466,7 +454,6 @@ void MainWindow::slot_ccSubdivide(){
                 glm::vec3 sumF = glm::vec3(0.0f);
 
                 //number of adjacent midpoints
-
                 float n = 0;
 
                 //terminating condition
@@ -474,7 +461,6 @@ void MainWindow::slot_ccSubdivide(){
                 HalfEdge* current_edge = v->getHalfEdge();
 
                 do {
-
                     //sumE:
                     //go to adjacent midpoint
                     //add midpoints position
@@ -486,7 +472,7 @@ void MainWindow::slot_ccSubdivide(){
                     sumF += faceCentroids.find(current_edge->getFace())->second->getPosition();
 
                     //reverse and go towards next midpoint
-                    current_edge = v->getHalfEdge()->getSym()->getNext();
+                    current_edge = current_edge->getSym()->getNext();
 
                 } while(current_edge != start_edge);
 
@@ -497,25 +483,51 @@ void MainWindow::slot_ccSubdivide(){
                 v->setPosition(smoothenedPosition);
                }
 
+               //**QUADRANGULATE**//
+
                //step 4: for each original face, split that face into N quadrangle faces
                //Writing a separate function to "quadrangulate" a face given the new vertices may be helpful.
 
-               //Consider writing a Quadrangulate function that takes a Face, a centroid, and the set of half-edges that point to the midpoints on that face.
-
                for(auto &face : ui->mygl->m_mesh.faces){
+
                 HalfEdge * start_edge = face->getHalfEdge();
                 HalfEdge * current_edge = face->getHalfEdge();
-                HalfEdge * temp_pointer = current_edge;
+
+                //first quadrangle
+                //face of first quad will just be the original face
+                auto heToCentroid_q1 = std::make_unique<HalfEdge>();
+                auto heAwayFromCentroid_q1 = std::make_unique<HalfEdge>();
+
+                heToCentroid_q1->setVertex(faceCentroids[face.get()]);
+                heToCentroid_q1->setNext(heAwayFromCentroid_q1.get());
+                heToCentroid_q1->setFace(face.get());
+
+                heAwayFromCentroid_q1->setFace(face.get());
+                heAwayFromCentroid_q1->setNext(current_edge);
+                heAwayFromCentroid_q1->setVertex(current_edge->getSym()->getVertex());
+
+                //create half edge loop within quad
+                current_edge->getNext()->setNext(heToCentroid_q1.get());
+
+                //use this pointer to set up symmetries and close loop
+                HalfEdge * previous_quad = current_edge;
+
+                //move current edge to the start of the next quad
+                current_edge = current_edge->getNext()->getNext();
 
                 //HalfEdge * next_sub_surface = face->getHalfEdge()->getNext();
 
-                //vector of quadrangles
-                std::vector<Face*> quadVector;
+                //push to mesh + widgets:
+                //add newly created halfedges
+                ui->halfEdgesListWidget->addItem(QString::number(heToCentroid_q1->getId()));
+                ui->halfEdgesListWidget->addItem(QString::number(heAwayFromCentroid_q1->getId()));
+
+                ui->mygl->m_mesh.halfEdges.push_back(std::move(heToCentroid_q1));
+                ui->mygl->m_mesh.halfEdges.push_back(std::move(heAwayFromCentroid_q1));
 
                 do{
                     //quadface
                     auto quadFace = std::make_unique<Face>(ui->mygl->generateRandomColor());
-
                     auto heToCentroid = std::make_unique<HalfEdge>();
                     auto heAwayFromCentroid = std::make_unique<HalfEdge>();
 
@@ -527,11 +539,18 @@ void MainWindow::slot_ccSubdivide(){
                     heAwayFromCentroid->setNext(current_edge);
                     heAwayFromCentroid->setVertex(current_edge->getSym()->getVertex());
 
-                    quadVector.push_back(quadFace.get());
+                    quadFace->setHalfEdge(current_edge);
 
-                    temp_pointer = current_edge;
+                    //set up symmetries
 
-                    current_edge->getNext()->getNext();
+                        //close quad loop within previous quad
+                    previous_quad->getNext()->setNext(heToCentroid.get());
+                        //set sym mutually
+                    heAwayFromCentroid->setSym(previous_quad->getNext()->getNext());
+                    previous_quad->getNext()->getNext()->setSym(heAwayFromCentroid.get());
+
+                    previous_quad = current_edge;
+                    current_edge =current_edge->getNext()->getNext();
 
                     //push stuff to mesh:
                     //add newly created halfedges
@@ -547,16 +566,13 @@ void MainWindow::slot_ccSubdivide(){
 
                 } while(current_edge != start_edge);
 
-                //connect halfedge symmetries pointers
+                //set up symmetry of the first quadrangle's half edge away from centroid to previous quad's half edge to centroid
+                heAwayFromCentroid_q1.get()->setSym(previous_quad->getNext()->getNext());
+                previous_quad->getNext()->getNext()->setSym(heAwayFromCentroid_q1.get());
 
-                for(auto &quadrangle : quadVector){
-                    ;
                 }
-
-
 
                }
 
-}
 
 

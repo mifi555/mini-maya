@@ -30,8 +30,9 @@ public:
     //step 2: moving the original vertices inward
     //step 3?: connecting these vertices with half edges
 
-    //separate function to quadrangulate a face given the new vertices
+    //separate function to quadrangulate a face given the new
 
+    //void quadrangulate(Face* face, std::vector<Vertex*> midpoints, Vertex* centroid);
 
 };
 
