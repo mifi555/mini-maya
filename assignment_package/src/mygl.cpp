@@ -335,11 +335,8 @@ void MyGL::keyPressEvent(QKeyEvent *e)
                 prevHalfEdge = halfEdge.get();
 
                 //Setting up SYM pointers
-                //finds position where the key is present in the map
-                int smallID = std::min(idx1, idx2);
-                int largeID = std::max(idx1, idx2);
+                auto it = halfEdgeMap.find({idx2, idx1});
 
-                auto it = halfEdgeMap.find({smallID, largeID});
 
                 //std::cout << "Key for HE " << halfEdge->getId() << " is {" << smallID << ", " << largeID << "}." << std::endl;
 
@@ -348,18 +345,15 @@ void MyGL::keyPressEvent(QKeyEvent *e)
                     //.second retrieves value aka the half edge
                     halfEdge->setSym(it->second);
                     it->second->setSym(halfEdge.get());
+                    //it->second->setVertex(vertexMap[idx1]);
                 }
                 //push half edge into mesh's vector
                 m_mesh.halfEdges.push_back(std::move(halfEdge));
 
                 //if we reached the end
                 if (it == halfEdgeMap.end()){
-                    halfEdgeMap[{smallID, largeID}] = m_mesh.halfEdges.back().get();
+                    halfEdgeMap[{idx1, idx2}] = m_mesh.halfEdges.back().get();
                 }
-
-
-
-
             }
             //close the loop by having the prevHalfEdge point to the first half edge
             prevHalfEdge->setNext(firstHalfEdge);

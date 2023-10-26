@@ -47,7 +47,9 @@ private slots:
     //slot for catmull clark subdivision
     void slot_ccSubdivide();
 
-    void quadrangulateFace();
+    //for each original face, split face into N quadrangle faces
+    //void quadrangulateFace(Face* f, std::map<HalfEdges*, glm::vec3>& edgeVertices, const glm::vec3& faceCentroid);
+
 
 
 private:
