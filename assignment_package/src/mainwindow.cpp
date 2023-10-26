@@ -381,7 +381,7 @@ void MainWindow::slot_ccSubdivide(){
             //** ADD MIDPOINT VERTICES **
 
             std::set<HalfEdge*> visitedEdges;
-            int fullEdges = ui->mygl->m_mesh.halfEdges.size()/2;
+            //int fullEdges = ui->mygl->m_mesh.halfEdges.size()/2;
 
             for(auto &he1 : ui->mygl->m_mesh.halfEdges){
 
@@ -438,6 +438,10 @@ void MainWindow::slot_ccSubdivide(){
 
                he2->setSym(he1B.get());
                he1B->setSym(he2);
+
+               //add middpoint to list of vertices
+               ui->vertsListWidget->addItem(QString::number(v3->getId()));
+               ui->mygl->m_mesh.vertices.push_back(std::move(v3));
 
             }
             }
@@ -571,6 +575,9 @@ void MainWindow::slot_ccSubdivide(){
                 previous_quad->getNext()->getNext()->setSym(heAwayFromCentroid_q1.get());
 
                 }
+
+               ui->mygl->m_mesh.create();
+               ui->mygl->update();
 
                }
 
