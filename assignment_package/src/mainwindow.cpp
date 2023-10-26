@@ -503,15 +503,17 @@ void MainWindow::slot_ccSubdivide(){
                //step 4: for each original face, split that face into N quadrangle faces
                //Writing a separate function to "quadrangulate" a face given the new vertices may be helpful.
 
-
                //for loop based on original face vector size since we're adding quad faces
                int facesSize = ui->mygl->m_mesh.faces.size();
+
                for(int i = 0; i < facesSize; i++){
 
                 Face *face = ui->mygl->m_mesh.faces[i].get();
 
                 HalfEdge * start_edge = face->getHalfEdge();
                 HalfEdge * current_edge = face->getHalfEdge();
+
+                //std::cout << current_edge->getNext()->getSym() << std::endl;
 
                 //first quadrangle
                 //face of first quad will just be the original face
@@ -535,6 +537,8 @@ void MainWindow::slot_ccSubdivide(){
                 //move current edge to the start of the next quad i.e. the next sub surface
                 current_edge = current_edge->getNext()->getNext();
 
+                std::cout << current_edge->getSym() << std::endl;
+
                 //HalfEdge * next_sub_surface = face->getHalfEdge()->getNext();
 
                 //push to mesh + widgets:
@@ -557,7 +561,7 @@ void MainWindow::slot_ccSubdivide(){
 
                     heAwayFromCentroid->setFace(quadFace.get());
                     heAwayFromCentroid->setNext(current_edge);
-                    //heAwayFromCentroid->setVertex(current_edge->getSym()->getVertex());
+                    heAwayFromCentroid->setVertex(current_edge->getSym()->getVertex());
 
                     quadFace->setHalfEdge(current_edge);
 
@@ -589,7 +593,6 @@ void MainWindow::slot_ccSubdivide(){
                 //set up symmetry of the first quadrangle's half edge away from centroid to previous quad's half edge to centroid
                 heAwayFromCentroid_q1.get()->setSym(previous_quad->getNext()->getNext());
                 previous_quad->getNext()->getNext()->setSym(heAwayFromCentroid_q1.get());
-
                 }
 
 //               ui->mygl->m_mesh.create();
