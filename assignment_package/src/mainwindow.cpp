@@ -379,7 +379,6 @@ void MainWindow::slot_ccSubdivide(){
             //6 centroids for cube
 
             //** ADD MIDPOINT VERTICES **
-
             std::set<HalfEdge*> visitedEdges;
             //int fullEdges = ui->mygl->m_mesh.halfEdges.size()/2;
 
@@ -442,7 +441,7 @@ void MainWindow::slot_ccSubdivide(){
                he2->setSym(he1B.get());
                he1B->setSym(he2);
 
-               //add middpoint to list of vertices
+               //add midpoint to list of vertices
                ui->vertsListWidget->addItem(QString::number(v3->getId()));
                ui->mygl->m_mesh.vertices.push_back(std::move(v3));
 
@@ -457,6 +456,8 @@ void MainWindow::slot_ccSubdivide(){
             }
 
             //**SMOOTHEN VERTICES**//
+
+            //for loop based on original vertices vector size since we're adding new midpoint vertices
             for (int i = 0; i< (int) ui->mygl->m_mesh.vertices.size(); i++){
 
                 Vertex* v = ui->mygl->m_mesh.vertices[i].get();
@@ -503,6 +504,7 @@ void MainWindow::slot_ccSubdivide(){
                //Writing a separate function to "quadrangulate" a face given the new vertices may be helpful.
 
 
+               //for loop based on original face vector size since we're adding quad faces
                int facesSize = ui->mygl->m_mesh.faces.size();
                for(int i = 0; i < facesSize; i++){
 
@@ -530,7 +532,7 @@ void MainWindow::slot_ccSubdivide(){
                 //use this pointer to set up symmetries and close loop
                 HalfEdge * previous_quad = current_edge;
 
-                //move current edge to the start of the next quad
+                //move current edge to the start of the next quad i.e. the next sub surface
                 current_edge = current_edge->getNext()->getNext();
 
                 //HalfEdge * next_sub_surface = face->getHalfEdge()->getNext();
@@ -555,7 +557,7 @@ void MainWindow::slot_ccSubdivide(){
 
                     heAwayFromCentroid->setFace(quadFace.get());
                     heAwayFromCentroid->setNext(current_edge);
-                    heAwayFromCentroid->setVertex(current_edge->getSym()->getVertex());
+                    //heAwayFromCentroid->setVertex(current_edge->getSym()->getVertex());
 
                     quadFace->setHalfEdge(current_edge);
 
