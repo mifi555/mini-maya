@@ -383,14 +383,17 @@ void MainWindow::slot_ccSubdivide(){
             std::set<HalfEdge*> visitedEdges;
             //int fullEdges = ui->mygl->m_mesh.halfEdges.size()/2;
 
-            for(auto &he1 : ui->mygl->m_mesh.halfEdges){
+            int vertices_size = ui->mygl->m_mesh.halfEdges.size();
 
+            for(int i = 0; i < vertices_size; i++){
+
+               HalfEdge *he1 = ui->mygl->m_mesh.halfEdges[i].get();
                HalfEdge *he2 = he1->getSym();
 
                //make sure if we haven't dealt with the half edge already
-               if (visitedEdges.find(he1.get()) == visitedEdges.end()) {
+               if (visitedEdges.find(he1) == visitedEdges.end()) {
 
-                visitedEdges.insert(he1.get());
+                visitedEdges.insert(he1);
                 visitedEdges.insert(he2);
 
                 glm::vec3 midPoint = glm::vec3(0.0f);
@@ -434,7 +437,7 @@ void MainWindow::slot_ccSubdivide(){
                he2->setVertex(v3.get());
 
                he1->setSym(he2B.get());
-               he2B->setSym(he1.get());
+               he2B->setSym(he1);
 
                he2->setSym(he1B.get());
                he1B->setSym(he2);
@@ -442,6 +445,13 @@ void MainWindow::slot_ccSubdivide(){
                //add middpoint to list of vertices
                ui->vertsListWidget->addItem(QString::number(v3->getId()));
                ui->mygl->m_mesh.vertices.push_back(std::move(v3));
+
+               //add newly created halfedges to list of half edges
+               ui->halfEdgesListWidget->addItem(QString::number(he1B->getId()));
+               ui->halfEdgesListWidget->addItem(QString::number(he2B->getId()));
+
+               ui->mygl->m_mesh.halfEdges.push_back(std::move(he1B));
+               ui->mygl->m_mesh.halfEdges.push_back(std::move(he2B));
 
             }
             }
@@ -492,7 +502,11 @@ void MainWindow::slot_ccSubdivide(){
                //step 4: for each original face, split that face into N quadrangle faces
                //Writing a separate function to "quadrangulate" a face given the new vertices may be helpful.
 
-               for(auto &face : ui->mygl->m_mesh.faces){
+
+               int facesSize = ui->mygl->m_mesh.faces.size();
+               for(int i = 0; i < facesSize; i++){
+
+                Face *face = ui->mygl->m_mesh.faces[i].get();
 
                 HalfEdge * start_edge = face->getHalfEdge();
                 HalfEdge * current_edge = face->getHalfEdge();
@@ -502,11 +516,11 @@ void MainWindow::slot_ccSubdivide(){
                 auto heToCentroid_q1 = std::make_unique<HalfEdge>();
                 auto heAwayFromCentroid_q1 = std::make_unique<HalfEdge>();
 
-                heToCentroid_q1->setVertex(faceCentroids[face.get()]);
+                heToCentroid_q1->setVertex(faceCentroids[face]);
                 heToCentroid_q1->setNext(heAwayFromCentroid_q1.get());
-                heToCentroid_q1->setFace(face.get());
+                heToCentroid_q1->setFace(face);
 
-                heAwayFromCentroid_q1->setFace(face.get());
+                heAwayFromCentroid_q1->setFace(face);
                 heAwayFromCentroid_q1->setNext(current_edge);
                 heAwayFromCentroid_q1->setVertex(current_edge->getSym()->getVertex());
 
@@ -535,7 +549,7 @@ void MainWindow::slot_ccSubdivide(){
                     auto heToCentroid = std::make_unique<HalfEdge>();
                     auto heAwayFromCentroid = std::make_unique<HalfEdge>();
 
-                    heToCentroid->setVertex(faceCentroids[face.get()]);
+                    heToCentroid->setVertex(faceCentroids[face]);
                     heToCentroid->setNext(heAwayFromCentroid.get());
                     heToCentroid->setFace(quadFace.get());
 
@@ -576,9 +590,8 @@ void MainWindow::slot_ccSubdivide(){
 
                 }
 
-               ui->mygl->m_mesh.create();
-               ui->mygl->update();
-
+//               ui->mygl->m_mesh.create();
+//               ui->mygl->update();
                }
 
 
