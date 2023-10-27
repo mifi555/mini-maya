@@ -375,6 +375,7 @@ void MainWindow::slot_ccSubdivide(){
                auto centroid = std::make_unique<Vertex>(centroidPos, nullptr);
 
                faceCentroids[face.get()] = centroid.get();
+
             }
             //6 centroids for cube
 
@@ -511,9 +512,7 @@ void MainWindow::slot_ccSubdivide(){
                 Face *face = ui->mygl->m_mesh.faces[i].get();
 
                 HalfEdge * start_edge = face->getHalfEdge();
-                HalfEdge * current_edge = face->getHalfEdge();
-
-                //std::cout << current_edge->getNext()->getSym() << std::endl;
+                HalfEdge * current_edge = start_edge;
 
                 //first quadrangle
                 //face of first quad will just be the original face
@@ -528,18 +527,14 @@ void MainWindow::slot_ccSubdivide(){
                 heAwayFromCentroid_q1->setNext(current_edge);
                 heAwayFromCentroid_q1->setVertex(current_edge->getSym()->getVertex());
 
-                //create half edge loop within quad
-                current_edge->getNext()->setNext(heToCentroid_q1.get());
-
                 //use this pointer to set up symmetries and close loop
                 HalfEdge * previous_quad = current_edge;
 
                 //move current edge to the start of the next quad i.e. the next sub surface
                 current_edge = current_edge->getNext()->getNext();
 
-                std::cout << current_edge->getSym() << std::endl;
-
-                //HalfEdge * next_sub_surface = face->getHalfEdge()->getNext();
+                //close half edge loop within quad
+                previous_quad->getNext()->setNext(heToCentroid_q1.get());
 
                 //push to mesh + widgets:
                 //add newly created halfedges
@@ -547,15 +542,22 @@ void MainWindow::slot_ccSubdivide(){
                 ui->halfEdgesListWidget->addItem(QString::number(heAwayFromCentroid_q1->getId()));
 
                 ui->mygl->m_mesh.halfEdges.push_back(std::move(heToCentroid_q1));
+
+                HalfEdge* raw_heToCentroid_q1 = ui->mygl->m_mesh.halfEdges.back().get();
+
                 ui->mygl->m_mesh.halfEdges.push_back(std::move(heAwayFromCentroid_q1));
 
+                HalfEdge* raw_heAwayFromCentroid_q1 = ui->mygl->m_mesh.halfEdges.back().get();
+
+                auto centroidVertex = std::make_unique<Vertex>(faceCentroids[face]->getPosition(), nullptr);
                 do{
                     //quadface
+
                     auto quadFace = std::make_unique<Face>(ui->mygl->generateRandomColor());
                     auto heToCentroid = std::make_unique<HalfEdge>();
                     auto heAwayFromCentroid = std::make_unique<HalfEdge>();
 
-                    heToCentroid->setVertex(faceCentroids[face]);
+                    heToCentroid->setVertex(centroidVertex.get());
                     heToCentroid->setNext(heAwayFromCentroid.get());
                     heToCentroid->setFace(quadFace.get());
 
@@ -591,12 +593,17 @@ void MainWindow::slot_ccSubdivide(){
                 } while(current_edge != start_edge);
 
                 //set up symmetry of the first quadrangle's half edge away from centroid to previous quad's half edge to centroid
-                heAwayFromCentroid_q1.get()->setSym(previous_quad->getNext()->getNext());
-                previous_quad->getNext()->getNext()->setSym(heAwayFromCentroid_q1.get());
+                raw_heAwayFromCentroid_q1->setSym(previous_quad->getNext()->getNext());
+                previous_quad->getNext()->getNext()->setSym(raw_heAwayFromCentroid_q1);
+
+                ui->vertsListWidget->addItem(QString::number(centroidVertex->getId()));
+                ui->mygl->m_mesh.vertices.push_back(std::move(centroidVertex));
+
+
                 }
 
-//               ui->mygl->m_mesh.create();
-//               ui->mygl->update();
+               ui->mygl->m_mesh.create();
+               ui->mygl->update();
                }
 
 
