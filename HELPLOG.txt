@@ -1,4 +1,4 @@
-CIS5620 HW05 HELPLOG
+CIS5600 HW05 HELPLOG
 
 **USING 1 LATE DAY FOR THIS HOMEWORK**
 
@@ -12,10 +12,15 @@ CIS5620 HW05 HELPLOG
 
 ----
 
-CIS5620 HW06 HELPLOG
+CIS5600 HW06 HELPLOG
 
 10/20 11:30AM Received help from Linda during office hours with regards to implementing the spherical camera.
 
 Received help with regards to CC Subdivision during office hours the week of 10/23-10/26
 
 10/26 2:00PM Reached out to Adam for debugging help. 
+
+----
+
+CIS5600 HW07 HELPLOG
+

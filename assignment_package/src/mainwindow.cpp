@@ -66,6 +66,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //Catmull-Clark subdivision
     connect(ui->subdivide, SIGNAL(clicked()), this, SLOT(slot_ccSubdivide()));
+
+    //hw07: load skeleton
+    connect(ui->skeletonButton, SIGNAL(clicked()), this, SLOT(slot_loadSkeleton()));
 }
 
 MainWindow::~MainWindow()
@@ -377,8 +380,6 @@ void MainWindow::slot_ccSubdivide(){
                faceCentroids[face.get()] = centroid.get();
 
             }
-            //6 centroids for cube
-
             //** ADD MIDPOINT VERTICES **
             std::set<HalfEdge*> visitedEdges;
             //int fullEdges = ui->mygl->m_mesh.halfEdges.size()/2;
@@ -599,12 +600,20 @@ void MainWindow::slot_ccSubdivide(){
                 ui->vertsListWidget->addItem(QString::number(centroidVertex->getId()));
                 ui->mygl->m_mesh.vertices.push_back(std::move(centroidVertex));
 
-
                 }
-
                ui->mygl->m_mesh.create();
                ui->mygl->update();
                }
+
+void MainWindow::slot_loadSkeleton(){
+               //open file
+               QString fileName = QFileDialog::getOpenFileName(this, tr("Open File"), QString("../../../../jsons"), tr("JSON Files (*.json)"));
+               if(!fileName.isEmpty()) {
+                ui->mygl->loadJSONFile(fileName);
+               }
+}
+
+
 
 
 

@@ -1,4 +1,6 @@
 #include "mygl.h"
+#include "QtCore/qjsondocument.h"
+#include "QtCore/qjsonobject.h"
 #include <la.h>
 #include <random>
 
@@ -7,6 +9,12 @@
 #include <QKeyEvent>
 
 #include <QFileDialog>
+
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QFile>
+#include <QQuaternion>
 
 
 
@@ -18,7 +26,10 @@ MyGL::MyGL(QWidget *parent)
     m_glCamera(), m_mesh(this),
     m_vertDisplay(this),
     m_halfEdgeDisplay(this),
-    m_faceDisplay(this)
+    m_faceDisplay(this),
+    m_rootJoint(nullptr),
+    m_joints()
+//    m_skeleton(this)
 
 {
     setFocusPolicy(Qt::StrongFocus);
@@ -63,6 +74,9 @@ void MyGL::initializeGL()
     // Create and set up the flat lighting shader
     m_progFlat.create(":/glsl/flat.vert.glsl", ":/glsl/flat.frag.glsl");
 
+    for(auto &joint : m_joints) {
+        joint->create();
+    }
 
     // We have to have a VAO bound in OpenGL 3.2 Core. But if we're not
     // using multiple VAOs, we can just bind one once.
@@ -98,7 +112,6 @@ void MyGL::paintGL()
 
     m_progFlat.draw(m_mesh);
 
-
     //**added**
     glDisable(GL_DEPTH_TEST);
 
@@ -117,9 +130,19 @@ void MyGL::paintGL()
 
     glEnable(GL_DEPTH_TEST);
 
+    //draw joints
+    glDisable(GL_DEPTH_TEST);
+    for(auto &joint : m_joints) {
+        Drawable& drawable = *joint;
+        m_progFlat.draw(drawable);
+    }
+    glEnable(GL_DEPTH_TEST);
+
+    //draw selected joints
+
+
 
 }
-
 
 void MyGL::keyPressEvent(QKeyEvent *e)
 {
@@ -366,7 +389,6 @@ void MyGL::keyPressEvent(QKeyEvent *e)
 
         //create the mesh
         m_mesh.create();
-
     }
 
 glm::vec3 MyGL::generateRandomColor() {
@@ -379,4 +401,79 @@ glm::vec3 MyGL::generateRandomColor() {
     float blue = dist(gen);
 
     return glm::vec3(red, green, blue);
+}
+
+
+//hw07
+void MyGL::loadJSONFile(const QString& filePath){
+
+    QString val;
+    QFile file;
+    file.setFileName(filePath);
+
+    file.open(QIODevice::ReadOnly | QIODevice::Text);
+
+    val = file.readAll();
+    file.close();
+
+    QJsonDocument d = QJsonDocument::fromJson(val.toUtf8());
+    QJsonObject object = d.object();
+    QJsonObject rootObject = object["root"].toObject();
+
+    createJointFromJSON(rootObject);
+}
+
+std::unique_ptr<Joint> MyGL::createJointFromJSON(const QJsonObject& jointObject){
+    // Extract joint properties from JSON
+    QString name = jointObject["name"].toString();
+
+    QJsonArray posArray = jointObject["pos"].toArray();
+    QJsonArray rotArray = jointObject["rot"].toArray();
+
+    // Convert rotation array to a quaternion
+    float angle = rotArray[0].toDouble();
+    glm::vec3 axis(rotArray[1].toDouble(), rotArray[2].toDouble(), rotArray[3].toDouble());
+    glm::quat rotation = glm::angleAxis(glm::radians(angle), axis);
+
+    // Create a new joint
+    auto joint = std::make_unique<Joint>(this, name.toStdString(), glm::vec3(posArray[0].toDouble(), posArray[1].toDouble(), posArray[2].toDouble()), rotation);
+
+    //push joint into joint vector
+
+    m_joints.push_back(std::unique_ptr<Joint>(joint.get()));
+
+    QJsonArray childrenArray = jointObject["children"].toArray();
+
+    // Process children recursively
+    for (int i = 0; i < childrenArray.size(); ++i) {
+            auto childJoint = createJointFromJSON(childrenArray[i].toObject());
+            joint->addChild(std::move(childJoint));
+    }
+
+    std::cout << this->m_joints.size() << std::endl;
+
+    for(auto &j : this->m_joints){
+            std::cout << j->name << std::endl;
+    }
+    //set root joint of skeleton
+    setRootJoint(joint.get());
+
+    //std::cout << this->getRootJoint()->name << std::endl;
+
+    //returns root joint
+    return joint;
+}
+
+
+Joint* MyGL::getRootJoint() const {
+    return m_rootJoint;
+}
+
+
+void MyGL::setRootJoint(Joint* joint) {
+    m_rootJoint = joint;
+}
+
+const std::vector<std::unique_ptr<Joint>>& MyGL::getJoints() const {
+    return m_joints;
 }

@@ -17,8 +17,9 @@
 #include "halfedgedisplay.h"
 #include "facedisplay.h"
 
+#include "skeleton.h"
 
-
+#include "joint.h"
 
 class MyGL
     : public OpenGLContext
@@ -41,6 +42,12 @@ private:
     VertexDisplay m_vertDisplay;
     HalfEdgeDisplay m_halfEdgeDisplay;
     FaceDisplay m_faceDisplay;
+
+    //**Joints
+//    Skeleton m_skeleton;
+    Joint* m_rootJoint;
+
+    std::vector<std::unique_ptr<Joint>> m_joints;
 
 public:
     explicit MyGL(QWidget *parent = nullptr);
@@ -65,6 +72,20 @@ public:
 
     friend class MainWindow;
 
+
+    //Joints
+    void loadJSONFile(const QString& filePath);
+
+    std::unique_ptr<Joint> createJointFromJSON(const QJsonObject& jointObject);
+
+    // Getter for rootJoint
+    Joint* getRootJoint() const;
+
+    // Setter for rootJoint
+    void setRootJoint(Joint* joint);
+
+    //Getter for joint vector
+    const std::vector<std::unique_ptr<Joint>>& getJoints() const;
 
 
 public slots:

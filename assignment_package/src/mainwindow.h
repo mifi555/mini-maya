@@ -52,6 +52,9 @@ private slots:
     //for each original face, split face into N quadrangle faces
     //void quadrangulateFace(Face* f, std::map<HalfEdges*, glm::vec3>& edgeVertices, const glm::vec3& faceCentroid);
 
+    //**hw07: load skeleton
+    void slot_loadSkeleton();
+
 
 
 private:
