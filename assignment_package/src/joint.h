@@ -2,6 +2,7 @@
 #define JOINT_H
 
 
+#include "QtWidgets/qtreewidget.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -9,12 +10,12 @@
 #include <string>
 #include <drawable.h>
 
-class Joint : public Drawable
+class Joint : public QTreeWidgetItem
 {
 
 public:
     //Name: The name of this joint which will be displayed in your QTreeWidget of joints.
-    std::string name;
+    QString name;
 
     //Parent: The joint that is the parent of this joint.
     Joint* parent;
@@ -32,12 +33,14 @@ public:
     //Bind Matrix: The inverse of the joint's compound transformation matrix at the time a mesh is bound to the joint's skeleton.
     glm::mat4 bindMatrix;
 
+    bool hasBindMatrix;
+
 public:
     // Constructor
-    Joint(OpenGLContext* context, const std::string& name, glm::vec3 position, glm::quat rotation);
+    Joint(QString & name, glm::vec3 position, glm::quat rotation);
 
     // Add a child joint
-    void addChild(std::unique_ptr<Joint> child);
+    Joint& addChild(std::unique_ptr<Joint> child);
 
     // Compute the local transformation matrix
     glm::mat4 getLocalTransformation() const;
@@ -45,9 +48,19 @@ public:
     // Compute the overall transformation matrix
     glm::mat4 getOverallTransformation() const;
 
-    void create() override;
+    //calculates and sets the bind matrix for a joint in a skeletal animation system. This matrix represents the joint's transformation relative to its initial (or "bind") position.
+    glm::mat4 setBindMatrix();
 
-    GLenum drawMode() override;
+    //joint transoformations
+    void setJointPosition(int, double);
+    void rotateXAxis(double);
+    void rotateYAxis(double);
+    void rotateZAxis(double);
+
+    //friend classes
+    friend class Skeleton;
+    friend class JointDisplay;
+    friend class Mainwindow;
 
 };
 

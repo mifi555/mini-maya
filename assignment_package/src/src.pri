@@ -7,6 +7,7 @@ SOURCES += \
     $$PWD/halfedge.cpp \
     $$PWD/halfedgedisplay.cpp \
     $$PWD/joint.cpp \
+    $$PWD/jointdisplay.cpp \
     $$PWD/main.cpp \
     $$PWD/mainwindow.cpp \
     $$PWD/mesh.cpp \
@@ -29,6 +30,7 @@ HEADERS += \
     $$PWD/halfedge.h \
     $$PWD/halfedgedisplay.h \
     $$PWD/joint.h \
+    $$PWD/jointdisplay.h \
     $$PWD/la.h \
     $$PWD/mainwindow.h \
     $$PWD/mesh.h \
@@ -44,3 +46,6 @@ HEADERS += \
     $$PWD/smartpointerhelp.h \
     $$PWD/vertex.h \
     $$PWD/vertexdisplay.h
+
+DISTFILES += \
+    $$PWD/../glsl/skeleton.vert.glsl

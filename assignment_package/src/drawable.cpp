@@ -2,8 +2,8 @@
 #include <la.h>
 
 Drawable::Drawable(OpenGLContext* context)
-    : count(-1), bufIdx(), bufPos(), bufNor(), bufCol(),
-      idxBound(false), posBound(false), norBound(false), colBound(false),
+    : count(-1), bufIdx(), bufPos(), bufNor(), bufCol(), bufIDs(), bufWeights(),
+      idxBound(false), posBound(false), norBound(false), colBound(false), idsBound(false), weightsBound(false),
       mp_context(context)
 {}
 
@@ -18,6 +18,9 @@ void Drawable::destroy()
     mp_context->glDeleteBuffers(1, &bufPos);
     mp_context->glDeleteBuffers(1, &bufNor);
     mp_context->glDeleteBuffers(1, &bufCol);
+
+    mp_context->glDeleteBuffers(1, &bufIDs);
+    mp_context->glDeleteBuffers(1, &bufWeights);
 }
 
 GLenum Drawable::drawMode()
@@ -30,6 +33,7 @@ GLenum Drawable::drawMode()
 
     return GL_TRIANGLES;
 }
+
 
 int Drawable::elemCount()
 {
@@ -64,6 +68,20 @@ void Drawable::generateCol()
     mp_context->glGenBuffers(1, &bufCol);
 }
 
+void Drawable::generateIDs()
+{
+    idsBound = true;
+    // Create a VBO on our GPU and store its handle in bufIDs
+    mp_context->glGenBuffers(1, &bufIDs);
+}
+
+void Drawable::generateWeights()
+{
+    weightsBound = true;
+    // Create a VBO on our GPU and store its handle in bufWeights
+    mp_context->glGenBuffers(1, &bufWeights);
+}
+
 bool Drawable::bindIdx()
 {
     if(idxBound) {
@@ -94,4 +112,21 @@ bool Drawable::bindCol()
         mp_context->glBindBuffer(GL_ARRAY_BUFFER, bufCol);
     }
     return colBound;
+}
+
+bool Drawable::bindIDs()
+{
+    if (idsBound) {
+        mp_context->glBindBuffer(GL_ARRAY_BUFFER, bufIDs);
+    }
+    return idsBound;
+}
+
+//
+bool Drawable::bindWeights()
+{
+    if (weightsBound) {
+        mp_context->glBindBuffer(GL_ARRAY_BUFFER, bufWeights);
+    }
+    return weightsBound;
 }

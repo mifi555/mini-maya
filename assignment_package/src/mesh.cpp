@@ -7,7 +7,7 @@
     //Populates the VBOs of the Drawable.
     //Implemented by subclasses of Drawable
 
-Mesh::Mesh(OpenGLContext* context) : Drawable(context), faces(), halfEdges(), vertices() {}
+Mesh::Mesh(OpenGLContext* context) : Drawable(context), faces(), halfEdges(), vertices(), isBoundToSkeleton(false) {}
 
 void Mesh::create() {
 
@@ -15,6 +15,9 @@ void Mesh::create() {
         std::vector<glm::vec4> nor;
         std::vector<glm::vec4> col;
         std::vector<GLuint> idx;
+
+        std::vector<glm::vec2> weights;
+        std::vector<glm::ivec2> ids;
 
         int totalNumberOfVerticesInMesh = 0;
 
@@ -27,6 +30,8 @@ void Mesh::create() {
             //make a counter of the number of indices that constitue the face
             int numFaceVerts = 0;
 
+
+
             do {
                 glm::vec3 v1 = current_edge->getVertex()->getPosition();
                 glm::vec3 v2 = current_edge->getNext()->getVertex()->getPosition();
@@ -38,6 +43,10 @@ void Mesh::create() {
                 nor.push_back(glm::vec4(normal, 1));
                 col.push_back(glm::vec4(face->getColor(), 1));
 
+                if (this->isBoundToSkeleton) {
+                    weights.push_back(current_edge->getVertex()->weights);
+                    ids.push_back(current_edge->getVertex()->jointIds);
+                }
                 current_edge = current_edge->getNext();
 
                 numFaceVerts++;
@@ -72,6 +81,15 @@ void Mesh::create() {
         generateCol();
         mp_context->glBindBuffer(GL_ARRAY_BUFFER, bufCol);
         mp_context->glBufferData(GL_ARRAY_BUFFER, col.size() * sizeof(glm::vec4), col.data(), GL_STATIC_DRAW);
+
+        generateWeights();
+        bindWeights();
+        mp_context->glBufferData(GL_ARRAY_BUFFER, weights.size() * sizeof(glm::vec2), weights.data(), GL_STATIC_DRAW);
+
+        generateIDs();
+        bindIDs();
+        mp_context->glBufferData(GL_ARRAY_BUFFER, ids.size() * sizeof(glm::ivec2), ids.data(), GL_STATIC_DRAW);
+
     }
 
 

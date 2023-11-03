@@ -69,6 +69,29 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //hw07: load skeleton
     connect(ui->skeletonButton, SIGNAL(clicked()), this, SLOT(slot_loadSkeleton()));
+
+    connect(ui->mygl, SIGNAL(sig_sendRootNode(QTreeWidgetItem*)),
+            this, SLOT(slot_addRootToTreeWidget(QTreeWidgetItem*)));
+
+    //bind skeleton
+    connect(ui->bindButton, SIGNAL(clicked(bool)), ui->mygl, SLOT(slot_bindSkeleton()));
+
+    //rotate joints
+    connect(ui->jointTree, SIGNAL(itemClicked(QTreeWidgetItem*, int)),
+            this, SLOT(slot_selectJoint(QTreeWidgetItem*)));
+    connect(ui->jointPosXSpinBox, SIGNAL(valueChanged(double)),
+            ui->mygl, SLOT(slot_modifyJointPosX(double)));
+    connect(ui->jointPosYSpinBox, SIGNAL(valueChanged(double)),
+            ui->mygl, SLOT(slot_modifyJointPosY(double)));
+    connect(ui->jointPosZSpinBox, SIGNAL(valueChanged(double)),
+            ui->mygl, SLOT(slot_modifyJointPosZ(double)));
+
+    connect(ui->jointPosRotateX, SIGNAL(clicked(bool)), ui->mygl, SLOT(slot_rotatePositiveX()));
+    connect(ui->jointPosRotateY, SIGNAL(clicked(bool)), ui->mygl, SLOT(slot_rotatePositiveY()));
+    connect(ui->jointPosRotateZ, SIGNAL(clicked(bool)), ui->mygl, SLOT(slot_rotatePositiveZ()));
+    connect(ui->jointNegRotateX, SIGNAL(clicked(bool)), ui->mygl, SLOT(slot_rotateNegativeX()));
+    connect(ui->jointNegRotateY, SIGNAL(clicked(bool)), ui->mygl, SLOT(slot_rotateNegativeY()));
+    connect(ui->jointNegRotateZ, SIGNAL(clicked(bool)), ui->mygl, SLOT(slot_rotateNegativeZ()));
 }
 
 MainWindow::~MainWindow()
@@ -611,8 +634,40 @@ void MainWindow::slot_loadSkeleton(){
                if(!fileName.isEmpty()) {
                 ui->mygl->loadJSONFile(fileName);
                }
+
+
 }
 
+//interactive skeleton
+
+void MainWindow::slot_addRootToTreeWidget(QTreeWidgetItem *i) {
+               ui->jointTree->addTopLevelItem(i);
+}
+
+void MainWindow::slot_selectJoint(QTreeWidgetItem *i) {
+               Joint* joint = dynamic_cast<Joint*>(i);
+
+               ui->mygl->m_selectedJointPtr = joint;
+
+
+               glm::mat4 currPosMat = glm::mat4(glm::vec4(1, 0, 0, 0),
+                                                glm::vec4(0, 1, 0, 0),
+                                                glm::vec4(0, 0, 1, 0),
+                                                glm::vec4(joint->position, 1));
+               currPosMat = joint->getOverallTransformation();
+               glm::vec4 currPos = currPosMat[3];
+               ui->jointPosXSpinBox->setValue(currPos[0]);
+               ui->jointPosYSpinBox->setValue(currPos[1]);
+               ui->jointPosZSpinBox->setValue(currPos[2]);
+
+
+               ui->mygl->m_jointDisplay.destroy();
+               ui->mygl->m_jointDisplay.updateJoint(joint);
+               ui->mygl->m_mesh.create();
+               ui->mygl->m_skeleton.create();
+               ui->mygl->update();
+
+}
 
 
 

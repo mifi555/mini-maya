@@ -22,14 +22,17 @@
 MyGL::MyGL(QWidget *parent)
     : OpenGLContext(parent),
       m_geomSquare(this),
-      m_progLambert(this), m_progFlat(this),
+    m_progLambert(this), m_progFlat(this), m_progSkeleton(this),
     m_glCamera(), m_mesh(this),
     m_vertDisplay(this),
     m_halfEdgeDisplay(this),
     m_faceDisplay(this),
+    m_jointDisplay(this),
+    m_skeleton(this),
     m_rootJoint(nullptr),
-    m_joints()
-//    m_skeleton(this)
+    m_joints(),
+    loadedObj(false),
+    loadedJoints(false)
 
 {
     setFocusPolicy(Qt::StrongFocus);
@@ -74,9 +77,7 @@ void MyGL::initializeGL()
     // Create and set up the flat lighting shader
     m_progFlat.create(":/glsl/flat.vert.glsl", ":/glsl/flat.frag.glsl");
 
-    for(auto &joint : m_joints) {
-        joint->create();
-    }
+    m_progSkeleton.create(":/glsl/skeleton.vert.glsl", ":/glsl/skeleton.frag.glsl");
 
     // We have to have a VAO bound in OpenGL 3.2 Core. But if we're not
     // using multiple VAOs, we can just bind one once.
@@ -95,6 +96,9 @@ void MyGL::resizeGL(int w, int h)
     m_progLambert.setViewProjMatrix(viewproj);
     m_progFlat.setViewProjMatrix(viewproj);
 
+    m_progSkeleton.setViewProjMatrix(viewproj);
+
+
     printGLErrorLog();
 }
 
@@ -107,10 +111,26 @@ void MyGL::paintGL()
 
     m_progFlat.setViewProjMatrix(m_glCamera.getViewProj());
     m_progLambert.setViewProjMatrix(m_glCamera.getViewProj());
-    m_progLambert.setCamPos(m_glCamera.eye);
-    m_progFlat.setModelMatrix(glm::mat4(1.f));
+    m_progSkeleton.setViewProjMatrix(m_glCamera.getViewProj());
 
-    m_progFlat.draw(m_mesh);
+
+    m_progLambert.setCamPos(m_glCamera.eye);
+    m_progSkeleton.setCamPos(m_glCamera.eye);
+
+    m_progFlat.setModelMatrix(glm::mat4(1.f));
+    m_progLambert.setModelMatrix(glm::mat4(1.f));
+    m_progSkeleton.setModelMatrix(glm::mat4(1.f));
+
+    m_progSkeleton.setJoints(m_skeleton.joints);
+
+    m_mesh.create();
+    glEnable(GL_DEPTH_TEST);
+
+    if (m_mesh.isBoundToSkeleton) {
+        m_progSkeleton.draw(m_mesh);
+    } else {
+        m_progLambert.draw(m_mesh);
+    }
 
     //**added**
     glDisable(GL_DEPTH_TEST);
@@ -128,20 +148,17 @@ void MyGL::paintGL()
     m_progFlat.draw(m_faceDisplay);
     }
 
-    glEnable(GL_DEPTH_TEST);
-
     //draw joints
-    glDisable(GL_DEPTH_TEST);
-    for(auto &joint : m_joints) {
-        Drawable& drawable = *joint;
-        m_progFlat.draw(drawable);
+    if (m_skeleton.rootJoint != nullptr) {
+    m_skeleton.create();
+    m_progFlat.draw(m_skeleton);
+    }
+
+    //draw selected joint
+    if(m_selectedJointPtr){
+    m_progFlat.draw(m_jointDisplay);
     }
     glEnable(GL_DEPTH_TEST);
-
-    //draw selected joints
-
-
-
 }
 
 void MyGL::keyPressEvent(QKeyEvent *e)
@@ -316,17 +333,6 @@ void MyGL::keyPressEvent(QKeyEvent *e)
                 int idx1 = faceIndices[i];
                 int idx2 = faceIndices[(i + 1) % faceIndices.size()];
 
-
-                //**
-//                //make vertex unique pointer
-//                auto vertex = std::make_unique<Vertex>(vertexPositions[idx2], nullptr);
-//                //push vertex into m_mesh's vector of vertices
-//                m_mesh.vertices.push_back(std::move(vertex));
-//                //set face and vertex for half edge
-//                halfEdge->setFace(face.get());
-//                halfEdge->setVertex(m_mesh.vertices.back().get());
-               //**
-
                 //prevent from creating duplicate vertices
                 Vertex* vertexPtr;
                 //if we haven't created a vertex for a particular index, you create it, store it in your mesh's vertices list, and update the map.
@@ -403,8 +409,6 @@ glm::vec3 MyGL::generateRandomColor() {
     return glm::vec3(red, green, blue);
 }
 
-
-//hw07
 void MyGL::loadJSONFile(const QString& filePath){
 
     QString val;
@@ -419,61 +423,143 @@ void MyGL::loadJSONFile(const QString& filePath){
     QJsonDocument d = QJsonDocument::fromJson(val.toUtf8());
     QJsonObject object = d.object();
     QJsonObject rootObject = object["root"].toObject();
-
-    createJointFromJSON(rootObject);
+    m_skeleton.rootJoint = m_skeleton.readJointsFromJSON(rootObject);
+    m_skeleton.createJointVector(m_skeleton.rootJoint.get());
+    emit sig_sendRootNode(m_skeleton.rootJoint.get());
+    update();
 }
 
-std::unique_ptr<Joint> MyGL::createJointFromJSON(const QJsonObject& jointObject){
-    // Extract joint properties from JSON
-    QString name = jointObject["name"].toString();
-
-    QJsonArray posArray = jointObject["pos"].toArray();
-    QJsonArray rotArray = jointObject["rot"].toArray();
-
-    // Convert rotation array to a quaternion
-    float angle = rotArray[0].toDouble();
-    glm::vec3 axis(rotArray[1].toDouble(), rotArray[2].toDouble(), rotArray[3].toDouble());
-    glm::quat rotation = glm::angleAxis(glm::radians(angle), axis);
-
-    // Create a new joint
-    auto joint = std::make_unique<Joint>(this, name.toStdString(), glm::vec3(posArray[0].toDouble(), posArray[1].toDouble(), posArray[2].toDouble()), rotation);
-
-    //push joint into joint vector
-
-    m_joints.push_back(std::unique_ptr<Joint>(joint.get()));
-
-    QJsonArray childrenArray = jointObject["children"].toArray();
-
-    // Process children recursively
-    for (int i = 0; i < childrenArray.size(); ++i) {
-            auto childJoint = createJointFromJSON(childrenArray[i].toObject());
-            joint->addChild(std::move(childJoint));
+void MyGL::slot_bindSkeleton() {
+    if (m_skeleton.rootJoint == nullptr) {
+            std::cout << "Skeleton cannot be bound to mesh." << std::endl;
+            return;
     }
 
-    std::cout << this->m_joints.size() << std::endl;
+    m_mesh.isBoundToSkeleton = true;
+    m_skeleton.calculateBindMatrices();
+    giveJointWeights();
+    update();
+}
 
-    for(auto &j : this->m_joints){
-            std::cout << j->name << std::endl;
+void MyGL::giveJointWeights()
+{
+    for (const auto & vertex : m_mesh.vertices) {
+            glm::mat4 currentMatrix = glm::mat4(glm::vec4(1, 0, 0, 0),
+                                                glm::vec4(0, 1, 0, 0),
+                                                glm::vec4(0, 0, 1, 0),
+                                                glm::vec4(vertex->getPosition(), 1));
+
+            int primaryId = 0;
+            int secondaryId = 0;
+            float smallestDistance = FLT_MAX;
+            float secondSmallestDistance = FLT_MAX;
+            float tempDistance = 0;
+            glm::vec4 updatedPos;
+
+            // Determine the two nearest weights
+            for (int idx = 0; idx < static_cast<int>(m_skeleton.joints.size()); idx++) {
+                // Obtain the vertex's local space position
+                glm::mat4 transformMatrix = m_skeleton.joints[idx]->bindMatrix * currentMatrix;
+                updatedPos = transformMatrix[3];
+
+                // Evaluate Euclidean distance
+                tempDistance = glm::length(updatedPos);
+
+                // Revise smallest distance metrics
+                if (tempDistance < smallestDistance) {
+                    secondSmallestDistance = smallestDistance;
+                    smallestDistance = tempDistance;
+                    secondaryId = primaryId;
+                    primaryId = idx;
+                } else if (tempDistance < secondSmallestDistance) {
+                    secondSmallestDistance = tempDistance;
+                    secondaryId = idx;
+                }
+            }
+
+            float totalDistance = smallestDistance + secondSmallestDistance;
+            float primaryInfluence = 1.0f - smallestDistance / totalDistance;
+            float secondaryInfluence = 1.0f - secondSmallestDistance / totalDistance;
+
+            vertex->jointIds = glm::ivec2(primaryId, secondaryId);
+            vertex->weights = glm::vec2(primaryInfluence, secondaryInfluence);
     }
-    //set root joint of skeleton
-    setRootJoint(joint.get());
-
-    //std::cout << this->getRootJoint()->name << std::endl;
-
-    //returns root joint
-    return joint;
 }
 
 
-Joint* MyGL::getRootJoint() const {
-    return m_rootJoint;
+//slots for Interactive Skeleton
+void MyGL::slot_modifyJointPosX(double x)
+{
+    if (m_jointDisplay.hasAJoint()) {
+            m_jointDisplay.representedJoint->setJointPosition(0, x);
+            update();
+    }
+}
+
+void MyGL::slot_modifyJointPosY(double y)
+{
+    if (m_jointDisplay.hasAJoint()) {
+            m_jointDisplay.representedJoint->setJointPosition(1, y);
+            update();
+    }
+}
+
+void MyGL::slot_modifyJointPosZ(double z)
+{
+    if (m_jointDisplay.hasAJoint()) {
+            m_jointDisplay.representedJoint->setJointPosition(2, z);
+            update();
+    }
+}
+
+void MyGL::slot_rotatePositiveX()
+{
+    if (m_jointDisplay.hasAJoint()) {
+            m_jointDisplay.representedJoint->rotateXAxis(5);
+            update();
+    }
+}
+
+void MyGL::slot_rotatePositiveY()
+{
+    if (m_jointDisplay.hasAJoint()) {
+            m_jointDisplay.representedJoint->rotateYAxis(5);
+            update();
+    }
+}
+
+void MyGL::slot_rotatePositiveZ()
+{
+    if (m_jointDisplay.hasAJoint()) {
+            m_jointDisplay.representedJoint->rotateZAxis(5);
+            update();
+    }
+}
+
+void MyGL::slot_rotateNegativeX()
+{
+    if (m_jointDisplay.hasAJoint()) {
+            m_jointDisplay.representedJoint->rotateXAxis(-5);
+            update();
+    }
+}
+
+void MyGL::slot_rotateNegativeY()
+{
+    if (m_jointDisplay.hasAJoint()) {
+            m_jointDisplay.representedJoint->rotateYAxis(-5);
+            update();
+    }
+}
+
+void MyGL::slot_rotateNegativeZ()
+{
+    if (m_jointDisplay.hasAJoint()) {
+            m_jointDisplay.representedJoint->rotateZAxis(-5);
+            update();
+    }
 }
 
 
-void MyGL::setRootJoint(Joint* joint) {
-    m_rootJoint = joint;
-}
 
-const std::vector<std::unique_ptr<Joint>>& MyGL::getJoints() const {
-    return m_joints;
-}
+

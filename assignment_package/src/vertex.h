@@ -25,6 +25,10 @@ public:
     void setHalfEdge(HalfEdge* he);
     void setPosition(glm::vec3 pos);
 
+    //hw07
+    glm::ivec2 jointIds;
+    glm::vec2 weights;
+
     friend class HalfEdge;
 };
 

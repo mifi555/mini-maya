@@ -15,10 +15,16 @@ protected:
     GLuint bufCol; // Can be used to pass per-vertex color information to the shader, but is currently unused.
                    // Instead, we use a uniform vec4 in the shader to set an overall color for the geometry
 
+    GLuint bufIDs;
+    GLuint bufWeights;
+
     bool idxBound; // Set to TRUE by generateIdx(), returned by bindIdx().
     bool posBound;
     bool norBound;
     bool colBound;
+
+    bool idsBound;
+    bool weightsBound;
 
     OpenGLContext* mp_context; // Since Qt's OpenGL support is done through classes like QOpenGLFunctions_3_2_Core,
                           // we need to pass our OpenGL context to the Drawable in order to call GL functions
@@ -34,6 +40,7 @@ public:
 
     // Getter functions for various GL data
     virtual GLenum drawMode();
+
     int elemCount();
 
     // Call these functions when you want to call glGenBuffers on the buffers stored in the Drawable
@@ -43,8 +50,14 @@ public:
     void generateNor();
     void generateCol();
 
+    void generateIDs();
+    void generateWeights();
+
     bool bindIdx();
     bool bindPos();
     bool bindNor();
     bool bindCol();
+
+    bool bindIDs();
+    bool bindWeights();
 };

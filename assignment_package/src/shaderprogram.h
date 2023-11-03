@@ -6,6 +6,7 @@
 #include <glm/glm.hpp>
 
 #include "drawable.h"
+#include "joint.h"
 
 
 class ShaderProgram
@@ -19,10 +20,17 @@ public:
     int attrNor; // A handle for the "in" vec4 representing vertex normal in the vertex shader
     int attrCol; // A handle for the "in" vec4 representing vertex color in the vertex shader
 
+    int attrIDs;
+    int attrWeights;
+
     int unifModel; // A handle for the "uniform" mat4 representing model matrix in the vertex shader
     int unifModelInvTr; // A handle for the "uniform" mat4 representing inverse transpose of the model matrix in the vertex shader
     int unifViewProj; // A handle for the "uniform" mat4 representing combined projection and view matrices in the vertex shader
     int unifCamPos; // A handle for the "uniform" vec4 representing color of geometry in the vertex shader
+
+    int unifBindMatrices;
+    int unifTransformations;
+
 
 public:
     ShaderProgram(OpenGLContext* context);
@@ -37,6 +45,9 @@ public:
     // Pass the given color to this shader on the GPU
     void setCamPos(glm::vec3 pos);
     // Draw the given object to our screen using this ShaderProgram's shaders
+
+    void setJoints(std::vector<Joint*>& joints);
+
     void draw(Drawable &d);
     // Utility function used in create()
     char* textFileRead(const char*);

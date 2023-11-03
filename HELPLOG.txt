@@ -24,3 +24,7 @@ Received help with regards to CC Subdivision during office hours the week of 10/
 
 CIS5600 HW07 HELPLOG
 
+10/30 Received help during after class office hours from Jackie on the joint class and drawing joint spheres.
+
+11/02 Received help during evening office hours from a TA on the Shader-based skin deformation.
+

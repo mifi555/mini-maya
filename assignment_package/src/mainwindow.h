@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include "QtWidgets/qlistwidget.h"
+#include "QtWidgets/qtreewidget.h"
 #include <QMainWindow>
 
 
@@ -55,7 +56,9 @@ private slots:
     //**hw07: load skeleton
     void slot_loadSkeleton();
 
-
+    //Interactive Skeleton
+    void slot_addRootToTreeWidget(QTreeWidgetItem *);
+    void slot_selectJoint(QTreeWidgetItem*);
 
 private:
     Ui::MainWindow *ui;

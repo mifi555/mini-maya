@@ -1,34 +1,34 @@
-//#ifndef SKELETON_H
-//#define SKELETON_H
+#ifndef SKELETON_H
+#define SKELETON_H
 
-//#include "drawable.h"
-//#include "joint.h"
+#include "drawable.h"
+#include "joint.h"
 
 
 
-//class Skeleton : public Drawable
-//{
+class Skeleton : public Drawable
+{
 
-//private:
-//    Joint* rootJoint;
+private:
+    std::unique_ptr<Joint> rootJoint;
+    std::vector<Joint*> joints;
 
-//    std::vector<std::unique_ptr<Joint>> joints;
 
-//public:
-//    Skeleton(OpenGLContext* context);
+public:
 
-//    void create() override;
+    Skeleton(OpenGLContext* context);
+    void create() override;
+    GLenum drawMode() override;
 
-//    std::unique_ptr<Joint> createJointFromJSON(const QJsonObject& jointObject);
+    std::unique_ptr<Joint> readJointsFromJSON(const QJsonObject& jointObject);
+    void createJoints(Joint *joint, std::vector<glm::vec4> &pos, std::vector<glm::vec4> &col, std::vector<GLuint> &idx);
+    void createJointVector(Joint *joint);
 
-//    // Getter for rootJoint
-//    Joint* getRootJoint() const;
+    //skinning
+    void calculateBindMatrices();
 
-//    // Setter for rootJoint
-//    void setRootJoint(Joint* joint);
+    friend class MyGL;
+    friend class MainWindow;
+};
 
-//    //Getter for joint vector
-//    const std::vector<std::unique_ptr<Joint>>& getJoints() const;
-//};
-
-//#endif // SKELETON_H
+#endif // SKELETON_H
